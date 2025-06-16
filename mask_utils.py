@@ -257,22 +257,8 @@ def omega_plate_offaxis(a, b, d, A, B):
 
 
 def solid_angle(bulk, xstep, ystep, m_d_distance, nobulk=False):
-    """
-    bulk_shape = shape(bulk)
-    xsize, ysize = (bulk_shape[0] * xstep, bulk_shape[1] * ystep)
-    xcoords = np.arange(0, bulk_shape[0]) * xstep + xstep/2 - xsize/2
-    ycoords = np.arange(0, bulk_shape[1]) * ystep + ystep/2 - ysize/2
-
-    omega = np.zeros(bulk_shape)
-
-    for ix in range(bulk_shape[0]):
-        for iy in range(bulk_shape[1]):
-            A = xsize/2 - abs(xcoords[ix])
-            B = ysize/2 - abs(ycoords[iy])
-            omega[ix, iy] = omega_plate_offaxis(xsize, ysize, m_d_distance, A, B) * bulk[ix, iy]
-
-    return omega
-    """
+    #Calculate solid angle for the whole bulk (pixel by pixel)
+	
     bulk = np.asarray(bulk)
     xsize, ysize = bulk.shape[0] * xstep, bulk.shape[1] * ystep
 
