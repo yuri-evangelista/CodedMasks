@@ -3,7 +3,8 @@ from sympy import *
 import numpy as np
 import astropy.io.fits as pyfits 
 from astropy.table import Table, Column
-
+from scipy.signal import convolve
+from scipy.signal import correlate
 
 def ura_mura(p):
     #Checking if p is prime
@@ -176,39 +177,6 @@ def eff_area_vs_off_axis(mask, det, x_pitch_ups, y_pitch_ups, focal, mask_thickn
     return eff_area
 
 
-def read_mask_bulk(fitsfile, ext):
-    r"""
-    Reads data from wfm_mask.fits
-    Extensions are:
-        0  PRIMARY       1 PrimaryHDU      28   ()      
-        1  OR_MASK       1 BinTableHDU     36   676000R x 3C   [E, E, E]   
-        2  MASK          1 BinTableHDU     36   676000R x 3C   [E, E, E]   
-        3  RMATRIX       1 BinTableHDU     38   676000R x 3C   [E, E, E]   
-        4  SENS          1 BinTableHDU     36   676000R x 3C   [E, E, E]   
-    """
-
-    with pyfits.open(fitsfile) as hdu_list:     
-        hdu_list.info()
-        header = hdu_list[ext].header
-        NELE   = header['NAXIS2']
-        ELXDIM = header['ELXDIM']
-        ELYDIM = header['ELYDIM']
-        ELXN   = header['ELXN']
-        ELYN   = header['ELYN']
-        MINX   = header['MINX']
-        MINY   = header['MINY']
-    
-    
-        data=Table(hdu_list[ext].data)
-        arr = np.zeros((ELXN, ELYN))
-        for ele in range(NELE):
-            ix = int(np.round(  ((data['X'][ele] - MINX - ELXDIM/2)/ELXDIM) ) )
-            iy = int(np.round(  ((data['Y'][ele] - MINY - ELYDIM/2)/ELYDIM) ) )
-            arr[ix,iy] = data['VAL'][ele]
-
-        return arr
-
-
 
 def omega_plate_offaxis(a, b, d, A, B):
     r"""
@@ -257,8 +225,22 @@ def omega_plate_offaxis(a, b, d, A, B):
 
 
 def solid_angle(bulk, xstep, ystep, m_d_distance, nobulk=False):
-    #Calculate solid angle for the whole bulk (pixel by pixel)
-	
+    """
+    bulk_shape = shape(bulk)
+    xsize, ysize = (bulk_shape[0] * xstep, bulk_shape[1] * ystep)
+    xcoords = np.arange(0, bulk_shape[0]) * xstep + xstep/2 - xsize/2
+    ycoords = np.arange(0, bulk_shape[1]) * ystep + ystep/2 - ysize/2
+
+    omega = np.zeros(bulk_shape)
+
+    for ix in range(bulk_shape[0]):
+        for iy in range(bulk_shape[1]):
+            A = xsize/2 - abs(xcoords[ix])
+            B = ysize/2 - abs(ycoords[iy])
+            omega[ix, iy] = omega_plate_offaxis(xsize, ysize, m_d_distance, A, B) * bulk[ix, iy]
+
+    return omega
+    """
     bulk = np.asarray(bulk)
     xsize, ysize = bulk.shape[0] * xstep, bulk.shape[1] * ystep
 
@@ -276,3 +258,104 @@ def solid_angle(bulk, xstep, ystep, m_d_distance, nobulk=False):
     else:
         omega_values = omega_plate_offaxis(xsize, ysize, m_d_distance, A, B)
     return omega_values
+
+def read_fits_events(filein, header0=False, header1=False, verbose=False):
+    with pyfits.open(filein) as hdu_list:
+        header_0 = hdu_list[0].header
+        header_1 = hdu_list[1].header
+        if verbose:
+            hdu_list.info()
+        data = hdu_list[1].data
+        events = Table(data)
+
+        if not header0 and not header1:
+            return events
+        elif header0 and not header1:
+            return events, header_0
+        elif not header0 and header1:
+            return events, header_1
+        elif header0 and header1:
+            return events, header_0, header_1
+
+def filter_source(data, ra, dec, verbose=False):
+    mask = np.ones(len(data), dtype=bool)
+    mask &= (np.isclose(data["RA"], ra) & np.isclose(data["DEC"], dec))
+    filtered = data[mask]
+    if verbose:
+        print("Selected", len(filtered), "out of", len(data), "events")
+
+    return filtered
+
+def read_mask_bulk(fitsfile, ext, header_out=False, verbose=False):
+    r"""
+    Reads data from wfm_mask.fits
+    Extensions are:
+        0  PRIMARY       1 PrimaryHDU      28   ()      
+        1  OR_MASK       1 BinTableHDU     36   676000R x 3C   [E, E, E]   
+        2  MASK          1 BinTableHDU     36   676000R x 3C   [E, E, E]   
+        3  RMATRIX       1 BinTableHDU     38   676000R x 3C   [E, E, E]   
+        4  SENS          1 BinTableHDU     36   676000R x 3C   [E, E, E]   
+    """
+
+    with pyfits.open(fitsfile) as hdu_list:     
+        if verbose:
+            hdu_list.info()
+        header = hdu_list[ext].header
+        NELE   = header['NAXIS2']
+        ELXDIM = header['ELXDIM']
+        ELYDIM = header['ELYDIM']
+        ELXN   = header['ELXN']
+        ELYN   = header['ELYN']
+        MINX   = header['MINX']
+        MINY   = header['MINY']
+    
+    
+        data=Table(hdu_list[ext].data)
+        arr = np.zeros((ELXN, ELYN))
+        for ele in range(NELE):
+            ix = int(np.round(  ((data['X'][ele] - MINX - ELXDIM/2)/ELXDIM) ) )
+            iy = int(np.round(  ((data['Y'][ele] - MINY - ELYDIM/2)/ELYDIM) ) )
+            arr[ix,iy] = data['VAL'][ele]
+
+        if header_out:
+            return arr, header
+        else:
+            return arr
+
+def get_detimage(data, xedges, yedges):
+    detimg, _, _ = np.histogram2d( data["X"], data["Y"], bins=(xedges, yedges) )
+    return detimg
+
+def decode(detimage, rmatrix, bulk):
+    cc = correlate(rmatrix, detimage, mode="full")
+    balancing = correlate(rmatrix, bulk, mode="full")
+    cc_bal = cc - balancing * np.sum(detimage) / np.sum(bulk)
+    return cc_bal
+
+
+def get_detimage_edges(xstep, ystep, nx, ny):
+    xedges = np.arange(0, xstep * nx, xstep) - (xstep * nx)/2
+    yedges = np.arange(0, ystep * ny, ystep) - (ystep * ny)/2
+
+    xedges = np.append(xedges, xedges[-1] + xstep)
+    yedges = np.append(yedges, yedges[-1] + ystep)
+
+    return xedges, yedges
+
+def get_skycoords(skyimage, xstep, ystep, m_d_distance, verbose=False, radians=False):
+    s = shape(skyimage)
+
+    x = (np.linspace(0, s[0]*xstep, num=s[0]) )
+    y = (np.linspace(0, s[1]*ystep, num=s[1]) )
+  
+    x -= x[-1]/2
+    y -= y[-1]/2
+
+    if verbose:
+        print("X bins range:", np.min(x), np.max(x))
+        print("Y bins range:",np.min(y), np.max(y))
+
+    if radians:
+        return np.arctan(x/m_d_distance), np.arctan(y/m_d_distance)
+    else:
+        return np.rad2deg(np.arctan(x/m_d_distance)), np.rad2deg(np.arctan(y/m_d_distance))
