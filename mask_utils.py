@@ -5,6 +5,7 @@ import astropy.io.fits as pyfits
 from astropy.table import Table, Column
 from scipy.signal import convolve
 from scipy.signal import correlate
+from scipy.ndimage import shift as ndshift
 
 def ura_mura(p):
     #Checking if p is prime
@@ -332,6 +333,15 @@ def decode(detimage, rmatrix, bulk):
     cc_bal = cc - balancing * np.sum(detimage) / np.sum(bulk)
     return cc_bal
 
+def decode_var(detimage, rmatrix, bulk):
+    var = correlate(np.square(rmatrix), detimage, mode="full")
+    var_balancing = correlate(np.square(rmatrix), bulk, mode="full") * (np.sum(detimage)) / np.square(np.sum(bulk))
+    var_bal = var - var_balancing 
+    return var_bal
+
+def get_skysign(skyimage, varimage):
+    var_clipped =  np.clip(varimage, a_min=1E-8, a_max=1E8) if np.any(varimage <= 0) else varimage
+    return skyimage/np.sqrt(var_clipped)
 
 def get_detimage_edges(xstep, ystep, nx, ny):
     xedges = np.arange(0, xstep * nx, xstep) - (xstep * nx)/2
@@ -359,3 +369,13 @@ def get_skycoords(skyimage, xstep, ystep, m_d_distance, verbose=False, radians=F
         return np.arctan(x/m_d_distance), np.arctan(y/m_d_distance)
     else:
         return np.rad2deg(np.arctan(x/m_d_distance)), np.rad2deg(np.arctan(y/m_d_distance))
+
+
+def fshift(arr, lagx, lagy):
+    """
+    Shifts a 2D array (casted to float) with fractional shifts using SciPy.
+    
+    Note: SciPy's shift convention is (y, x), but our images are already in the right shape
+    """
+    return ndshift(arr, (lagx, lagy), 'float', order=1, prefilter=True, mode='grid-constant', cval=0.0)
+
