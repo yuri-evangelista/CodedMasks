@@ -333,10 +333,29 @@ def decode(detimage, rmatrix, bulk):
     cc_bal = cc - balancing * np.sum(detimage) / np.sum(bulk)
     return cc_bal
 
-def decode_var(detimage, rmatrix, bulk):
-    var = correlate(np.square(rmatrix), detimage, mode="full")
-    var_balancing = correlate(np.square(rmatrix), bulk, mode="full") * (np.sum(detimage)) / np.square(np.sum(bulk))
-    var_bal = var - var_balancing 
+def decode_var(detimage, rmatrix, bulk, m_d_distance, elxdim, elydim):
+    #First of all we calculate the total detector counts and total active elelements
+    sum_det, sum_bulk = map(np.sum, (detimage, bulk))
+
+
+    #Then we "estimate" the background shape on the detector image considering only the system geometry 
+    # (i.e. the solid angle seen by each active pixel)
+    omega = solid_angle(bulk, elxdim, elydim, m_d_distance)
+
+    #and we normalize it to have a sum(omega) = 1
+    omega_norm = omega/np.sum(omega)
+
+    #Now we multiplicate it for the total detector counts in order to obtain the array of the "expected values"
+    Lambda = omega_norm * sum_det
+
+    #We define
+    xi = correlate(rmatrix, bulk, mode="full")
+    var = correlate(np.square(rmatrix), Lambda, mode="full")
+    cov = correlate(rmatrix, Lambda, mode="full")
+
+    #Then (https://www.overleaf.com/project/6863d6e3a6ffe4d95fe704fb)
+    var_bal =  var + sum_det/sum_bulk**2 * xi**2 - 2/sum_bulk * xi * cov
+ 
     return var_bal
 
 def get_skysign(skyimage, varimage):
