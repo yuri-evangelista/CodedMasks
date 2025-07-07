@@ -51,6 +51,38 @@ def bura(p, modified=False):
     
     return A
 
+def bura33(p):
+    """
+    Generates a biquadratic URA with OF ~0.33.
+   
+    ********************************************************
+    The resulting code does not seem "perfect"!!!!!
+    ********************************************************
+    
+    From Baumert L. D. 1971, Lecture Notes in Mathematics No. 182, Cyclic Difference Sets
+    Theorem 5.18 (iii)
+
+    ----------------------------------------------------------------------------------------------
+    The biquadratic residues of primes v = 4x^2 + 9, x odd, form a difference set with ~0.33 OF
+    Example primes: 13, 109, 1453, 3373, 3853, 4909, 6733
+
+    """
+    #Checking if p is prime
+    if not isprime(p):
+        raise TypeError("Number of array elements must be prime")
+
+    x = np.sqrt((p - 9)/4.0)
+    if not ( (int(x) == x) & ( (x % 2) == 1) ) :
+        raise TypeError("p does not fulfill the requirement of p = 4x^2 + 9 with x odd")
+ 
+    #Preparing arrays
+    A = np.zeros(p, dtype=np.int64)
+    R = np.arange(p, dtype=np.int64)**3 % p
+    A[R] = 1
+    A[0] = 0 #not sure about that
+
+    return A
+
 def shift(arr, lag):
     shifted = np.roll(arr, lag, axis=1)
     if lag >=0:
@@ -398,3 +430,23 @@ def fshift(arr, lagx, lagy):
     """
     return ndshift(arr, (lagx, lagy), 'float', order=1, prefilter=True, mode='grid-constant', cval=0.0)
 
+def generate_bulk(mask_shape, ELXDIM, ELYDIM):
+    #From WFM detector plane geometry
+    det_ext_border_x = 157.996
+    det_ext_border_y = 153.176
+    det_int_border_x = 28.204
+    det_int_border_y = 12.824
+
+    #Defining bulk array
+    bulk = np.ones(mask_shape)
+
+    #Removing non-sensitive regions along the X direction
+    bulk[0: int(round((bulk.shape[0] -  det_ext_border_x/ELXDIM)/2)),      :] = 0
+    bulk[-int(round((bulk.shape[0] -  det_ext_border_x/ELXDIM)/2)) : ,      :] = 0
+    bulk[int(round((bulk.shape[0] -  det_int_border_x/ELXDIM)/2)) : -int(round((bulk.shape[0] -  det_int_border_x/ELXDIM)/2))  ,      :] = 0
+    #Removing non-sensitive regions along the Y direction
+    bulk[:,      0: int(round((bulk.shape[1] -  det_ext_border_y/ELYDIM)/2))] = 0
+    bulk[:,      -int(round((bulk.shape[1] -  det_ext_border_y/ELYDIM)/2)) : ] = 0
+    bulk[:,      int(round((bulk.shape[1] -  det_int_border_y/ELYDIM)/2)) : -int(round((bulk.shape[1] -  det_int_border_y/ELYDIM)/2))  ] = 0
+
+    return bulk
