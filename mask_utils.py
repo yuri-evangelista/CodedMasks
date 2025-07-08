@@ -77,9 +77,9 @@ def bura33(p):
  
     #Preparing arrays
     A = np.zeros(p, dtype=np.int64)
-    R = np.arange(p, dtype=np.int64)**3 % p
+    R = np.arange(p, dtype=np.int64)**4 % p
     A[R] = 1
-    A[0] = 0 #not sure about that
+    #A[0] = 0 #not sure about that
 
     return A
 
@@ -92,6 +92,18 @@ def shift(arr, lag):
     return shifted
 
 def erosion(arr, cut, step):
+    # number of bins to cut
+    ncuts = int(cut / step)
+    cutted = arr * (arr & shift(arr, ncuts)) if ncuts else arr
+
+    # array indexes to be fractionally reduced:
+    #   - the bin with the decimal values is the one
+    #     to the left or right wrt the cutted bins
+    erosion_value = abs(cut / step - ncuts)
+    border = (cutted - shift(cutted, int(np.sign(cut)))) > 0
+    return cutted - border * erosion_value
+
+def erosion_old(arr, cut, step):
     r"""
     Function to erode mask array for vignetting.
     2D matrix erosion for simulating finite thickness effect in shadow projections.
