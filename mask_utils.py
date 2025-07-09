@@ -6,6 +6,7 @@ from astropy.table import Table, Column
 from scipy.signal import convolve
 from scipy.signal import correlate
 from scipy.ndimage import shift as ndshift
+import pprint 
 
 def ura_mura(p):
     #Checking if p is prime
@@ -462,3 +463,58 @@ def generate_bulk(mask_shape, ELXDIM, ELYDIM):
     bulk[:,      int(round((bulk.shape[1] -  det_int_border_y/ELYDIM)/2)) : -int(round((bulk.shape[1] -  det_int_border_y/ELYDIM)/2))  ] = 0
 
     return bulk
+
+def write_mask_fits(FITSFILE, MASK, RMATRIX, BULK, PROPS):
+    r"""
+    Writes a FITS file with the following extensions:
+        1 - OR_MASK
+        2 - MASK
+        3 - RMATRIX
+        4 - SENS    
+    """
+    pprint.pp(PROPS, sort_dicts=False)
+
+    row_count = PROPS['ELXN'] * PROPS['ELYN']
+    print("\nTotal row count", row_count)
+
+    #Generate arrays
+    el = np.arange(row_count)
+    idx = np.unravel_index(el, MASK.shape)
+    X = idx[0] *  PROPS['ELXDIM'] -  PROPS['MXDIM']/2 +  PROPS['ELXDIM']/2
+    Y = idx[1] *  PROPS['ELYDIM'] -  PROPS['MYDIM']/2 +  PROPS['ELYDIM']/2
+    MASK_VAL = MASK[idx].astype('int')
+    RMATRIX_VAL = RMATRIX[idx]
+    BULK_VAL =  BULK[idx]
+
+    #Generating primary HDU
+    primary_hdu = pyfits.PrimaryHDU()
+
+    #Generating columns
+    x_col = pyfits.Column(name='X', format='E', array=X)
+    y_col = pyfits.Column(name='Y', format='E', array=Y)
+    mask_val_col = pyfits.Column(name='VAL', format='E', array=MASK_VAL)
+    rmatrix_val_col = pyfits.Column(name='VAL', format='E', array=RMATRIX_VAL)
+    bulk_val_col = pyfits.Column(name='VAL', format='E', array=BULK_VAL)
+
+    #Grouping columns in hdus
+    mask_cols = pyfits.ColDefs([x_col, y_col, mask_val_col])
+    rmatrix_cols = pyfits.ColDefs([x_col, y_col, rmatrix_val_col])
+    bulk_cols = pyfits.ColDefs([x_col, y_col, bulk_val_col])
+
+    #Generating HDUs from columns
+    or_mask_hdu = pyfits.BinTableHDU.from_columns(mask_cols, name="OR_MASK")
+    mask_hdu = pyfits.BinTableHDU.from_columns(mask_cols, name="MASK")
+    rmatrix_hdu = pyfits.BinTableHDU.from_columns(rmatrix_cols, name="RMATRIX")
+    bulk_hdu = pyfits.BinTableHDU.from_columns(bulk_cols, name="SENS")
+
+    #Updating headers
+    or_mask_hdu.header.update(PROPS)
+    mask_hdu.header.update(PROPS)
+    rmatrix_hdu.header.update(PROPS)
+    bulk_hdu.header.update(PROPS)
+
+    #Putting together HDUs in HDU list
+    out_hdu_list = pyfits.HDUList([primary_hdu, or_mask_hdu, mask_hdu, rmatrix_hdu, bulk_hdu])
+
+    #Writing to file
+    out_hdu_list.writeto(FITSFILE, overwrite=True)
