@@ -1,4 +1,3 @@
-```markdown
 # CodedMasks
 A collection of (quick&dirty) utilities for coded mask images.
 Comes with no warranty (and with a punk fashioned code...)
@@ -533,4 +532,3 @@ Filters a dataset based on Right Ascension (RA) and Declination (DEC) values.
 **Returns:**
 
 * `numpy.ndarray` or `astropy.table.Table`: The filtered data containing only events matching the specified RA and DEC.
-```
