@@ -56,7 +56,7 @@ Comes with no warranty (and with a punk fashioned code...)
 # Mask_Utils documentation
 
 <a id='code_utils.py'></a>
-## `code_utils.py`
+## Code Utils
 
 This module provides functions for generating different types of coded mask arrays, specifically Uniformly Redundant Arrays (URA), Modified Uniformly Redundant Arrays (MURA), Biquadratic Uniformly Redundant Arrays (BURA), and a specific BURA variant with ~0.33 open fraction.
 
@@ -127,7 +127,7 @@ The biquadratic residues of primes $v = 4x^2 + 9$, where $x$ is odd, form a diff
 * `TypeError`: If `p` is not prime or does not fulfill the condition $p = 4x^2 + 9$ with $x$ odd.
 
 <a id='fits_utils.py'></a>
-## `fits_utils.py`
+## FITS Utils`
 
 This module provides functions for reading and writing FITS files, particularly for mask data, and converting FITS mask data to DXF format.
 
@@ -199,7 +199,7 @@ Writes a DXF file of the mask with all open elements as polylines.
 * `dxfout` (`str`): The path where the DXF file will be written.
 
 <a id='image_utils.py'></a>
-## `image_utils.py`
+## Image Utils
 
 This module provides various utility functions for image manipulation, including shifting, erosion, padding, and upscaling.
 
@@ -288,7 +288,7 @@ Upscales a 2D array by repeating its elements.
 * `numpy.ndarray`: The upscaled array.
 
 <a id='imaging_utils.py'></a>
-## `imaging_utils.py`
+## Imaging Utils
 
 This module provides functions for calculating imaging properties such as open fraction, angular resolution, coding power, and effective area, as well as functions for decoding images and handling detector geometry.
 
@@ -518,7 +518,7 @@ Generates a bulk array representing the sensitive regions of the WFM detector pl
 * `numpy.ndarray`: The generated bulk array where sensitive regions are marked with 1s and non-sensitive regions with 0s.
 
 <a id='other_utils.py'></a>
-## `other_utils.py`
+## Other Utils
 
 This module contains utility functions for general data manipulation.
 
