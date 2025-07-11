@@ -187,7 +187,7 @@ def get_skycoords(skyimage, xstep, ystep, m_d_distance, verbose=False, radians=F
     else:
         return np.rad2deg(np.arctan(x/m_d_distance)), np.rad2deg(np.arctan(y/m_d_distance))
 
-def generate_bulk(mask_shape, ELXDIM, ELYDIM):
+def generate_bulk(mask_shape, elxdim, elydim):
     #From WFM detector plane geometry
     det_ext_border_x = 157.996
     det_ext_border_y = 153.176
@@ -198,12 +198,12 @@ def generate_bulk(mask_shape, ELXDIM, ELYDIM):
     bulk = np.ones(mask_shape)
 
     #Removing non-sensitive regions along the X direction
-    bulk[0: int(round((bulk.shape[0] -  det_ext_border_x/ELXDIM)/2)),      :] = 0
-    bulk[-int(round((bulk.shape[0] -  det_ext_border_x/ELXDIM)/2)) : ,      :] = 0
-    bulk[int(round((bulk.shape[0] -  det_int_border_x/ELXDIM)/2)) - 1 : -int(round((bulk.shape[0] -  det_int_border_x/ELXDIM)/2) - 1)  ,      :] = 0
+    bulk[0: int(np.round((bulk.shape[0] - det_ext_border_x/elxdim)/2)), :] = 0
+    bulk[-int(np.round((bulk.shape[0] - det_ext_border_x/elxdim)/2)) : , :] = 0
+    bulk[int(np.round((bulk.shape[0] - det_int_border_x/elxdim)/2)) - 1 : -int(np.round((bulk.shape[0] - det_int_border_x/elxdim)/2) - 1), :] = 0
     #Removing non-sensitive regions along the Y direction
-    bulk[:,      0: int(round((bulk.shape[1] -  det_ext_border_y/ELYDIM)/2))] = 0
-    bulk[:,      -int(round((bulk.shape[1] -  det_ext_border_y/ELYDIM)/2)) : ] = 0
-    bulk[:,      int(round((bulk.shape[1] -  det_int_border_y/ELYDIM)/2)) : -int(round((bulk.shape[1] -  det_int_border_y/ELYDIM)/2))  ] = 0
+    bulk[:, 0: int(np.round((bulk.shape[1] - det_ext_border_y/elydim)/2))] = 0
+    bulk[:, -int(np.round((bulk.shape[1] - det_ext_border_y/elydim)/2)) : ] = 0
+    bulk[:, int(np.round((bulk.shape[1] - det_int_border_y/elydim)/2)) : -int(np.round((bulk.shape[1] - det_int_border_y/elydim)/2))] = 0
 
     return bulk
