@@ -70,7 +70,7 @@ Finds the next prime number greater than or equal to `n`.
 
 **Returns:**
 
-* `int`): The next prime number.
+* `int`: The next prime number.
 
 ### <a id='ura_mura(p)'></a> `ura_mura(p)`
 
