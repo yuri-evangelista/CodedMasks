@@ -4,52 +4,52 @@ Comes with no warranty (and with a punk fashioned code...)
 
 ## Code Utils
 ### Tools to generate URA, MURA and other codes
-[.\mask_utils\code_utils.py](#code_utils.py)
-- [next_prime](#next_prime(n))
-- [ura_mura](#ura_mura(p))
-- [bura](#bura(p,-modified=False))
-- [bura33](#bura33(p))
+.\mask_utils\code_utils.py
+- next_prime
+- ura_mura
+- bura
+- bura33
 
 ## Fits Utils
 ### Tools to read and write WFM fits
-[.\mask_utils\fits_utils.py](#fits_utils.py)
-- [read_fits_events](#read_fits_events(filein,-header0=False,-header1=False,-verbose=False))
-- [read_mask_bulk](#read_mask_bulk(fitsfile,-ext,-header_out=False,-verbose=False))
-- [write_mask_fits](#write_mask_fits(fitsfile,-mask,-rmatrix,-bulk,-props))
-- [fits_mask_to_dxf](#fits_mask_to_dxf(fitsin,-dxfout))
+.\mask_utils\fits_utils.py
+- read_mask_bulk
+- read_mask_bulk
+- write_mask_fits
+- fits_mask_to_dxf
 
 ## Image Utils
 ### Tools to manipulate images
-[.\mask_utils\image_utils.py](#image_utils.py)
-- [shift](#shift(arr,-lag))
-- [fshift](#fshift(arr,-lagx,-lagy))
-- [erosion](#erosion(arr,-cut,-step))
-- [pad_array](#pad_array(arr,-npadx,-npady))
-- [float_gcd](#float_gcd(a,-b,-rtol=1e-05,-atol=1e-05))
-- [upscale](#upscale(array,-fx,-fy))
+.\mask_utils\image_utils.py
+- shift
+- fshift
+- erosion
+- pad_array
+- float_gcd
+- upscale
 
 ## Imaging Utils
 ### Tools to perform decoding operations and calculate system properties (effective area, solid angle, etc.)
-[.\mask_utils\imaging_utils.py](#imaging_utils.py)
-- [get_openfraction](#get_openfraction(mask))
-- [get_angular_res](#get_angular_res(m_pitch,-d_pitch,-m_d_distance,-degrees=False))
-- [get_coding_power](#get_coding_power(m_pitch,-d_pitch,-open_fraction))
-- [open_fraction_vs_off_axis](#open_fraction_vs_off_axis(mask,-mask_thickness,-mask_x_pitch,-mask_y_pitch,-thetax,-thetay,-degrees=True))
-- [eff_area_vs_off_axis](#eff_area_vs_off_axis(mask,-det,-x_pitch_ups,-y_pitch_ups,-focal,-mask_thickness,-thetax,-thetay,-degrees=True))
-- [omega_plate_offaxis](#omega_plate_offaxis(a,-b,-d,-a,-b))
-- [solid_angle](#solid_angle(bulk,-xstep,-ystep,-m_d_distance,-nobulk=False))
-- [get_detimage](#get_detimage(data,-xedges,-yedges))
-- [decode](#decode(detimage,-rmatrix,-bulk))
-- [decode_var](#decode_var(detimage,-rmatrix,-bulk,-m_d_distance,-elxdim,-elydim))
-- [get_skysign](#get_skysign(skyimage,-varimage))
-- [get_detimage_edges](#get_detimage_edges(xstep,-ystep,-nx,-ny))
-- [get_skycoords](#get_skycoords(skyimage,-xstep,-ystep,-m_d_distance,-verbose=False,-radians=False))
-- [generate_bulk](#generate_bulk(mask_shape,-elxdim,-elydim))
+.\mask_utils\imaging_utils.py
+- get_openfraction
+- get_angular_res
+- get_coding_power
+- open_fraction_vs_off_axis
+- eff_area_vs_off_axis
+- omega_plate_offaxis
+- solid_angle
+- get_detimage
+- decode
+- decode_var
+- get_skysign
+- get_detimage_edges
+- get_skycoords
+- generate_bulk
 
 ## Other Utils
 ### Miscellaneous tools
-[.\mask_utils\other_utils.py](#other_utils.py)
-- [filter_source](#filter_source(data,-ra,-dec,-verbose=False))
+.\mask_utils\other_utils.py
+- filter_source
 
 <hr style="border:2px solid">
 
