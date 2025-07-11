@@ -180,7 +180,7 @@ Upscales a 2D array by repeating its elements.
 
 ## `code_utils.py`
 
-This module provides functions for generating different types of coded mask arrays, specifically Uniformly Redundant Arrays (URA), Modified Uniformly Redundant Arrays (MURA), Binary Uniformly Redundant Arrays (BURA), and a specific BURA variant with ~0.33 open fraction.
+This module provides functions for generating different types of coded mask arrays, specifically Uniformly Redundant Arrays (URA), Modified Uniformly Redundant Arrays (MURA), Biquadratic Uniformly Redundant Arrays (BURA), and a specific BURA variant with ~0.33 open fraction.
 
 ### `next_prime(n)`
 
@@ -212,7 +212,7 @@ Generates a Uniformly Redundant Array (URA) or Modified Uniformly Redundant Arra
 
 ### `bura(p, modified=False)`
 
-Generates a Binary Uniformly Redundant Array (BURA).
+Generates a Biquadratic Uniformly Redundant Array (BURA).
 
 **Parameters:**
 
@@ -403,7 +403,7 @@ Decodes a detector image using the R-matrix and bulk array.
 
 ### `decode_var(detimage, rmatrix, bulk, m_d_distance, elxdim, elydim)`
 
-Calculates the variance image for decoding, based on the statistical approach outlined in a referenced Overleaf project.
+Calculates the variance image for decoding, based on the statistical approach outlined in a referenced Overleaf project [this document](https://github.com/yuri-evangelista/CodedMasks/blob/main/Coded_aperture_variance_202507.pdf).
 
 **Parameters:**
 
