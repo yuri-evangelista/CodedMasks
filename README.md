@@ -171,7 +171,7 @@ Reads mask data from a WFM mask FITS file (`wfm_mask.fits`).
 * `numpy.ndarray`: A 2D array representing the mask data.
 * `astropy.io.fits.Header`, optional: The header of the specified extension if `header_out` is `True`.
 
-### <a id='write_mask_fits(fitsfile,-mask,-rmatrix,-bulk,-props)'></a> `write_mask_fits(FITSFILE, MASK, RMATRIX, BULK, PROPS)`
+### <a id='write_mask_fits(fitsfile,-mask,-rmatrix,-bulk,-props)'></a> `write_mask_fits(fitsfile, mask, rmatrix, bulk, props)`
 
 Writes a FITS file with mask-related extensions.
 
@@ -183,11 +183,11 @@ Writes a FITS file with mask-related extensions.
 
 **Parameters:**
 
-* `FITSFILE` (`str`): The path where the FITS file will be written.
-* `MASK` (`numpy.ndarray`): The mask array.
-* `RMATRIX` (`numpy.ndarray`): The R-matrix array.
-* `BULK` (`numpy.ndarray`): The bulk array.
-* `PROPS` (`dict`): A dictionary containing properties to be written into the FITS headers, such as 'ELXN', 'ELYDIM', 'ELXDIM', 'MXDIM', 'MYDIM'.
+* `fitsfile` (`str`): The path where the FITS file will be written.
+* `mask` (`numpy.ndarray`): The mask array.
+* `rmatrix` (`numpy.ndarray`): The R-matrix array.
+* `bulk` (`numpy.ndarray`): The bulk array.
+* `props` (`dict`): A dictionary containing properties to be written into the FITS headers, such as 'ELXN', 'ELYDIM', 'ELXDIM', 'MXDIM', 'MYDIM'.
 
 ### <a id='fits_mask_to_dxf(fitsin,-dxfout)'></a> `fits_mask_to_dxf(fitsin, dxfout)`
 
