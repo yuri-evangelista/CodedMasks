@@ -443,7 +443,7 @@ Decodes a detector image using the R-matrix and bulk array.
 
 ### <a id='decode_var(detimage,-rmatrix,-bulk,-m_d_distance,-elxdim,-elydim)'></a> `decode_var(detimage, rmatrix, bulk, m_d_distance, elxdim, elydim)`
 
-Calculates the variance image for decoding, based on the statistical approach outlined in a referenced Overleaf project [this document](https://github.com/yuri-evangelista/CodedMasks/blob/main/Coded_aperture_variance_202507.pdf).
+Calculates the variance image for decoding, based on the statistical approach outlined in [this document](https://github.com/yuri-evangelista/CodedMasks/blob/main/Coded_aperture_variance_202507.pdf).
 
 **Parameters:**
 
