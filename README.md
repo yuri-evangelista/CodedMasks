@@ -53,7 +53,7 @@ Comes with no warranty (and with a punk fashioned code...)
 
 <hr style="border:2px solid">
 
-# Mask_Utils documentation
+# Mask Utils documentation
 
 <a id='code_utils.py'></a>
 ## Code Utils
@@ -127,7 +127,7 @@ The biquadratic residues of primes $v = 4x^2 + 9$, where $x$ is odd, form a diff
 * `TypeError`: If `p` is not prime or does not fulfill the condition $p = 4x^2 + 9$ with $x$ odd.
 
 <a id='fits_utils.py'></a>
-## FITS Utils`
+## FITS Utils
 
 This module provides functions for reading and writing FITS files, particularly for mask data, and converting FITS mask data to DXF format.
 
