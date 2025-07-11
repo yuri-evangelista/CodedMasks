@@ -503,15 +503,15 @@ Calculates the sky coordinates (angles) corresponding to the sky image pixels.
 
 * `tuple`: A tuple containing two `numpy.ndarray` objects: x-coordinates and y-coordinates.
 
-### <a id='generate_bulk(mask_shape,-elxdim,-elydim)'></a> `generate_bulk(mask_shape, ELXDIM, ELYDIM)`
+### <a id='generate_bulk(mask_shape,-elxdim,-elydim)'></a> `generate_bulk(mask_shape, elxdim, elydim)`
 
 Generates a bulk array representing the sensitive regions of the WFM detector plane.
 
 **Parameters:**
 
 * `mask_shape` (`tuple`): The desired shape of the bulk array (rows, columns).
-* `ELXDIM` (`float`): Elemental dimension along X.
-* `ELYDIM` (`float`): Elemental dimension along Y.
+* `elxdim` (`float`): Elemental dimension along X.
+* `elydim` (`float`): Elemental dimension along Y.
 
 **Returns:**
 
