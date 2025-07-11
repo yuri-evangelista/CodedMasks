@@ -1,74 +1,130 @@
+```markdown
 # CodedMasks
 A collection of (quick&dirty) utilities for coded mask images.
 Comes with no warranty (and with a punk fashioned code...)
 
 ## Code Utils
 ### Tools to generate URA, MURA and other codes
-.\mask_utils\code_utils.py
-- next_prime
-- ura_mura
-- bura
-- bura33
+[.\mask_utils\code_utils.py](#code_utils.py)
+- [next_prime](#next_prime(n))
+- [ura_mura](#ura_mura(p))
+- [bura](#bura(p,-modified=False))
+- [bura33](#bura33(p))
+
 ## Fits Utils
 ### Tools to read and write WFM fits
-.\mask_utils\fits_utils.py
-- read_mask_bulk
-- read_mask_bulk
-- write_mask_fits
-- fits_mask_to_dxf
+[.\mask_utils\fits_utils.py](#fits_utils.py)
+- [read_fits_events](#read_fits_events(filein,-header0=False,-header1=False,-verbose=False))
+- [read_mask_bulk](#read_mask_bulk(fitsfile,-ext,-header_out=False,-verbose=False))
+- [write_mask_fits](#write_mask_fits(fitsfile,-mask,-rmatrix,-bulk,-props))
+- [fits_mask_to_dxf](#fits_mask_to_dxf(fitsin,-dxfout))
+
 ## Image Utils
 ### Tools to manipulate images
-.\mask_utils\image_utils.py
-- shift
-- fshift
-- erosion
-- pad_array
-- float_gcd
-- upscale
+[.\mask_utils\image_utils.py](#image_utils.py)
+- [shift](#shift(arr,-lag))
+- [fshift](#fshift(arr,-lagx,-lagy))
+- [erosion](#erosion(arr,-cut,-step))
+- [pad_array](#pad_array(arr,-npadx,-npady))
+- [float_gcd](#float_gcd(a,-b,-rtol=1e-05,-atol=1e-05))
+- [upscale](#upscale(array,-fx,-fy))
+
 ## Imaging Utils
 ### Tools to perform decoding operations and calculate system properties (effective area, solid angle, etc.)
-.\mask_utils\imaging_utils.py
-- get_openfraction
-- get_angular_res
-- get_coding_power
-- open_fraction_vs_off_axis
-- eff_area_vs_off_axis
-- omega_plate_offaxis
-- solid_angle
-- get_detimage
-- decode
-- decode_var
-- get_skysign
-- get_detimage_edges
-- get_skycoords
-- generate_bulk
+[.\mask_utils\imaging_utils.py](#imaging_utils.py)
+- [get_openfraction](#get_openfraction(mask))
+- [get_angular_res](#get_angular_res(m_pitch,-d_pitch,-m_d_distance,-degrees=False))
+- [get_coding_power](#get_coding_power(m_pitch,-d_pitch,-open_fraction))
+- [open_fraction_vs_off_axis](#open_fraction_vs_off_axis(mask,-mask_thickness,-mask_x_pitch,-mask_y_pitch,-thetax,-thetay,-degrees=True))
+- [eff_area_vs_off_axis](#eff_area_vs_off_axis(mask,-det,-x_pitch_ups,-y_pitch_ups,-focal,-mask_thickness,-thetax,-thetay,-degrees=True))
+- [omega_plate_offaxis](#omega_plate_offaxis(a,-b,-d,-a,-b))
+- [solid_angle](#solid_angle(bulk,-xstep,-ystep,-m_d_distance,-nobulk=False))
+- [get_detimage](#get_detimage(data,-xedges,-yedges))
+- [decode](#decode(detimage,-rmatrix,-bulk))
+- [decode_var](#decode_var(detimage,-rmatrix,-bulk,-m_d_distance,-elxdim,-elydim))
+- [get_skysign](#get_skysign(skyimage,-varimage))
+- [get_detimage_edges](#get_detimage_edges(xstep,-ystep,-nx,-ny))
+- [get_skycoords](#get_skycoords(skyimage,-xstep,-ystep,-m_d_distance,-verbose=False,-radians=False))
+- [generate_bulk](#generate_bulk(mask_shape,-elxdim,-elydim))
+
 ## Other Utils
 ### Miscellaneous tools
-.\mask_utils\other_utils.py
-- filter_source
+[.\mask_utils\other_utils.py](#other_utils.py)
+- [filter_source](#filter_source(data,-ra,-dec,-verbose=False))
 
 <hr style="border:2px solid">
 
 # Mask_Utils documentation
 
-## `other_utils.py`
+## `code_utils.py`
 
-This module contains utility functions for general data manipulation.
+This module provides functions for generating different types of coded mask arrays, specifically Uniformly Redundant Arrays (URA), Modified Uniformly Redundant Arrays (MURA), Biquadratic Uniformly Redundant Arrays (BURA), and a specific BURA variant with ~0.33 open fraction.
 
-### `filter_source(data, ra, dec, verbose=False)`
+### `next_prime(n)`
 
-Filters a dataset based on Right Ascension (RA) and Declination (DEC) values.
+Finds the next prime number greater than or equal to `n`.
 
 **Parameters:**
 
-* `data` (`numpy.ndarray` or `astropy.table.Table`): The input data, expected to have 'RA' and 'DEC' columns.
-* `ra` (`float`): The Right Ascension value to filter by.
-* `dec` (`float`): The Declination value to filter by.
-* `verbose` (`bool`, optional): If `True`, prints the number of events selected. Defaults to `False`.
+* `n` (`int`): The starting number.
 
 **Returns:**
 
-* `numpy.ndarray` or `astropy.table.Table`: The filtered data containing only events matching the specified RA and DEC.
+* `int`): The next prime number.
+
+### `ura_mura(p)`
+
+Generates a Uniformly Redundant Array (URA) or Modified Uniformly Redundant Array (MURA) based on a prime number `p`.
+
+**Parameters:**
+
+* `p` (`int`): A prime number.
+
+**Returns:**
+
+* `numpy.ndarray`: A 1D array representing the URA or MURA.
+
+**Raises:**
+
+* `TypeError`: If `p` is not a prime number.
+
+### `bura(p, modified=False)`
+
+Generates a Biquadratic Uniformly Redundant Array (BURA).
+
+**Parameters:**
+
+* `p` (`int`): A prime number that fulfills the requirement $p = 4x^2 + 1$ with $x$ being an odd integer.
+* `modified` (`bool`, optional): If `True`, generates a Modified BURA (M-BURA) where the first element is set to 0. Defaults to `False`.
+
+**Returns:**
+
+* `numpy.ndarray`: A 1D array representing the BURA or M-BURA.
+
+**Raises:**
+
+* `TypeError`: If `p` is not prime or does not fulfill the condition $p = 4x^2 + 1$ with $x$ odd.
+
+### `bura33(p)`
+
+Generates a biquadratic URA with an open fraction of approximately 0.33.
+
+**Note:** The resulting code might not be "perfect".
+**Reference:** Based on Baumert L. D. 1971, Lecture Notes in Mathematics No. 182, Cyclic Difference Sets, Theorem 5.18 (iii).
+The biquadratic residues of primes $v = 4x^2 + 9$, where $x$ is odd, form a difference set with ~0.33 open fraction.
+**Example primes:** 13, 109, 1453, 3373, 3853, 4909, 6733.
+
+**Parameters:**
+
+* `p` (`int`): A prime number that fulfills the requirement $p = 4x^2 + 9$ with $x$ being an odd integer.
+
+**Returns:**
+
+* `numpy.ndarray`: A 1D array representing the biquadratic URA.
+
+**Raises:**
+
+* `TypeError`: If `p` is not prime or does not fulfill the condition $p = 4x^2 + 9$ with $x$ odd.
 
 ## `fits_utils.py`
 
@@ -229,75 +285,6 @@ Upscales a 2D array by repeating its elements.
 
 * `numpy.ndarray`: The upscaled array.
 
-## `code_utils.py`
-
-This module provides functions for generating different types of coded mask arrays, specifically Uniformly Redundant Arrays (URA), Modified Uniformly Redundant Arrays (MURA), Biquadratic Uniformly Redundant Arrays (BURA), and a specific BURA variant with ~0.33 open fraction.
-
-### `next_prime(n)`
-
-Finds the next prime number greater than or equal to `n`.
-
-**Parameters:**
-
-* `n` (`int`): The starting number.
-
-**Returns:**
-
-* `int`): The next prime number.
-
-### `ura_mura(p)`
-
-Generates a Uniformly Redundant Array (URA) or Modified Uniformly Redundant Array (MURA) based on a prime number `p`.
-
-**Parameters:**
-
-* `p` (`int`): A prime number.
-
-**Returns:**
-
-* `numpy.ndarray`: A 1D array representing the URA or MURA.
-
-**Raises:**
-
-* `TypeError`: If `p` is not a prime number.
-
-### `bura(p, modified=False)`
-
-Generates a Biquadratic Uniformly Redundant Array (BURA).
-
-**Parameters:**
-
-* `p` (`int`): A prime number that fulfills the requirement $p = 4x^2 + 1$ with $x$ being an odd integer.
-* `modified` (`bool`, optional): If `True`, generates a Modified BURA (M-BURA) where the first element is set to 0. Defaults to `False`.
-
-**Returns:**
-
-* `numpy.ndarray`: A 1D array representing the BURA or M-BURA.
-
-**Raises:**
-
-* `TypeError`: If `p` is not prime or does not fulfill the condition $p = 4x^2 + 1$ with $x$ odd.
-
-### `bura33(p)`
-
-Generates a biquadratic URA with an open fraction of approximately 0.33.
-
-**Note:** The resulting code might not be "perfect".
-**Reference:** Based on Baumert L. D. 1971, Lecture Notes in Mathematics No. 182, Cyclic Difference Sets, Theorem 5.18 (iii).
-The biquadratic residues of primes $v = 4x^2 + 9$, where $x$ is odd, form a difference set with ~0.33 open fraction.
-**Example primes:** 13, 109, 1453, 3373, 3853, 4909, 6733.
-
-**Parameters:**
-
-* `p` (`int`): A prime number that fulfills the requirement $p = 4x^2 + 9$ with $x$ being an odd integer.
-
-**Returns:**
-
-* `numpy.ndarray`: A 1D array representing the biquadratic URA.
-
-**Raises:**
-
-* `TypeError`: If `p` is not prime or does not fulfill the condition $p = 4x^2 + 9$ with $x$ odd.
 
 ## `imaging_utils.py`
 
@@ -527,3 +514,23 @@ Generates a bulk array representing the sensitive regions of the WFM detector pl
 **Returns:**
 
 * `numpy.ndarray`: The generated bulk array where sensitive regions are marked with 1s and non-sensitive regions with 0s.
+
+## `other_utils.py`
+
+This module contains utility functions for general data manipulation.
+
+### `filter_source(data, ra, dec, verbose=False)`
+
+Filters a dataset based on Right Ascension (RA) and Declination (DEC) values.
+
+**Parameters:**
+
+* `data` (`numpy.ndarray` or `astropy.table.Table`): The input data, expected to have 'RA' and 'DEC' columns.
+* `ra` (`float`): The Right Ascension value to filter by.
+* `dec` (`float`): The Declination value to filter by.
+* `verbose` (`bool`, optional): If `True`, prints the number of events selected. Defaults to `False`.
+
+**Returns:**
+
+* `numpy.ndarray` or `astropy.table.Table`: The filtered data containing only events matching the specified RA and DEC.
+```
