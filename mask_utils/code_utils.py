@@ -82,3 +82,31 @@ def bura33(p):
     #A[0] = 0 #not sure about that
 
     return A
+
+def cura(p):
+    """
+    Generates a cubic residues URA with OF ~0.33.
+   
+    ********************************************************
+    The resulting code does not seem "perfect"!!!!!
+    ********************************************************
+    
+    From Lehmer, D. H. 1962, "Machine Proof of a Theorem on Cubic Residues"
+    ----------------------------------------------------------------------------------------------
+
+    """
+    #Checking if p is prime
+    if not isprime(p):
+        raise TypeError("Number of array elements must be prime")
+    
+    x = (p - 1)/6.0
+
+    if not ( (int(x) == x) & ( (x % 2) == 1) ) :
+        raise TypeError("p does not fulfill the requirement of p = 6x + 1 with x odd")
+ 
+    #Preparing arrays
+    A = np.zeros(p, dtype=np.int64)
+    R = np.arange(p, dtype=np.int64)**3 % p
+    A[R] = 1
+    
+    return A
