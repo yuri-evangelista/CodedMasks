@@ -10,7 +10,7 @@ Comes with no warranty (and with a punk fashioned code...)
 - [bura](#bura(p,-modified=False))
 - [bura33](#bura33(p))
 - [cura](#cura(p))
-- [is_cyclic_difference_set](#is_cyclic_difference_set(s,v,k,lamba_val)))
+- [is_cyclic_difference_set](#is_cyclic_difference_set(s,v,k,lamba_val))
 
 ## Fits Utils
 ### Tools to read and write WFM fits
