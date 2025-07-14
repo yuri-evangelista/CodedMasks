@@ -10,8 +10,7 @@ Comes with no warranty (and with a punk fashioned code...)
 - [bura](#bura(p,-modified=False))
 - [bura33](#bura33(p))
 - [cura](#cura(p))
-- [is_cyclic_difference_set](#is_cyclic_difference_set(s, v, k, lambda_val))
-- [is_cyclic_difference_set](#mario(p))
+- [is_cyclic_difference_set](#is_cyclic_difference_set(s,v,k,lamba_val)))
 
 ## Fits Utils
 ### Tools to read and write WFM fits
@@ -129,7 +128,7 @@ The biquadratic residues of primes $v = 4x^2 + 9$, where $x$ is odd, form a diff
 
 * `TypeError`: If `p` is not prime or does not fulfill the condition $p = 4x^2 + 9$ with $x$ odd.
 
-### <a id='is_cyclic_difference_set(s, v, k, lambda_val)'></a> `is_cyclic_difference_set(s, v, k, lambda_val)`
+### <a id='is_cyclic_difference_set(s,v,k,lambda_val)'></a> `is_cyclic_difference_set(s, v, k, lambda_val)`
 
 Tests if a given set is a cyclic (v, k, lambda) difference set.
 
