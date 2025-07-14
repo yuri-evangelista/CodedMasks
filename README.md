@@ -138,11 +138,11 @@ Tests if a given set is a cyclic (v, k, lambda) difference set.
 * `v` (`int`): The modulus (size of the cyclic group).
 * `k` (`int`): The expected size of the set D..
 * `lambda_val` (`int`): The expected number of times each non-zero residue appears as a difference.
-* 
+  
 **Returns:**
 
 * `(bool, str)`: Indicating whether the set is a difference set and a message.
-* 
+  
 
 ### <a id='ura_mura(p)'></a> `ura_mura(p)`
 
