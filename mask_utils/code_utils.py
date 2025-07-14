@@ -110,3 +110,57 @@ def cura(p):
     A[R] = 1
     
     return A
+
+
+def is_cyclic_difference_set(s, v, k, lambda_val):
+    """
+    Tests if a given set is a cyclic (v, k, lambda) difference set.
+
+    Args:
+        s: A list or set of integers representing the candidate set D.
+        v: The modulus (size of the cyclic group).
+        k: The expected size of the set D.
+        lambda_val: The expected number of times each non-zero residue appears as a difference.
+
+    Returns:
+        A tuple (bool, str) indicating whether the set is a difference set and a message.
+    """
+
+    # 1. Check if the set has the correct number of distinct elements modulo v
+    unique_elements = set(x % v for x in s)
+    if len(unique_elements) != k:
+        return False, f"Error: Set does not contain exactly {k} distinct elements modulo {v}. Found {len(unique_elements)}."
+
+    # 2. Check the fundamental difference set equation: k*(k-1) = lambda*(v-1)
+    if k * (k - 1) != lambda_val * (v - 1):
+        return False, f"Error: Parameters do not satisfy k*(k-1) = lambda*(v-1). {k}*{k-1} = {k*(k-1)}, but {lambda_val}*{v-1} = {lambda_val*(v-1)}."
+
+    # 3. Compute all differences (di - dj) mod v
+    differences = {}
+    s_list = list(unique_elements) # Work with a list of unique, mod-v elements
+    n = len(s_list)
+
+    for i in range(n):
+        for j in range(n):
+            if i != j:
+                diff = (s_list[i] - s_list[j]) % v
+                differences[diff] = differences.get(diff, 0) + 1
+
+    # 4. Check if each non-zero residue appears exactly lambda_val times
+    for r in range(1, v):  # Iterate through non-zero residues
+        if r not in differences or differences[r] != lambda_val:
+            return False, f"Error: Residue {r} appears {differences.get(r, 0)} times, expected {lambda_val}."
+
+    return True, f"Success: The set {s} is a cyclic ({v}, {k}, {lambda_val}) difference set."
+
+"""
+Example usage:
+p = 131
+k = 66
+lam = (k * (k-1))/(p-1)
+
+v = np.arange(p, dtype=np.int64)**2 % p
+
+is_cyclic, result_set = is_cyclic_difference_set(v, p, k, lam)
+print(result_set)
+"""
