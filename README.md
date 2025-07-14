@@ -128,6 +128,18 @@ The biquadratic residues of primes $v = 4x^2 + 9$, where $x$ is odd, form a diff
 
 * `TypeError`: If `p` is not prime or does not fulfill the condition $p = 4x^2 + 9$ with $x$ odd.
 
+### <a id='ura_mura(p)'></a> `ura_mura(p)`
+
+Generates a Uniformly Redundant Array (URA) or Modified Uniformly Redundant Array (MURA) based on a prime number `p`.
+
+**Parameters:**
+
+* `p` (`int`): A prime number.
+
+**Returns:**
+
+* `numpy.ndarray`: A 1D array representing the URA or MURA.
+
 ### <a id='is_cyclic_difference_set(s,-v,-k,-lambda_val)'></a> `is_cyclic_difference_set(s, v, k, lambda_val)`
 
 Tests if a given set is a cyclic (v, k, lambda) difference set.
@@ -142,20 +154,6 @@ Tests if a given set is a cyclic (v, k, lambda) difference set.
 **Returns:**
 
 * `(bool, str)`: Indicating whether the set is a difference set and a message.
-  
-
-### <a id='ura_mura(p)'></a> `ura_mura(p)`
-
-Generates a Uniformly Redundant Array (URA) or Modified Uniformly Redundant Array (MURA) based on a prime number `p`.
-
-**Parameters:**
-
-* `p` (`int`): A prime number.
-
-**Returns:**
-
-* `numpy.ndarray`: A 1D array representing the URA or MURA.
-
 <a id='fits_utils.py'></a>
 ## FITS Utils
 
