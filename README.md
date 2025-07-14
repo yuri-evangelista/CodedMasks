@@ -9,6 +9,8 @@ Comes with no warranty (and with a punk fashioned code...)
 - [ura_mura](#ura_mura(p))
 - [bura](#bura(p,-modified=False))
 - [bura33](#bura33(p))
+- [cura](#cura(p))
+- [is_cyclic_difference_set](is_cyclic_difference_set(s, v, k, lambda_val))
 
 ## Fits Utils
 ### Tools to read and write WFM fits
@@ -125,6 +127,35 @@ The biquadratic residues of primes $v = 4x^2 + 9$, where $x$ is odd, form a diff
 **Raises:**
 
 * `TypeError`: If `p` is not prime or does not fulfill the condition $p = 4x^2 + 9$ with $x$ odd.
+
+
+### <a id='is_cyclic_difference_set(s, v, k, lambda_val)'></a> `is_cyclic_difference_set(s, v, k, lambda_val)`
+
+Tests if a given set is a cyclic (v, k, lambda) difference set.
+
+**Parameters:**
+
+* `s` (`numpy.ndarray`): The set to be tested.
+* `v` (`int`): The modulus (size of the cyclic group).
+* `k` (`int`): The expected size of the set D..
+* `lambda_val` (`int`): The expected number of times each non-zero residue appears as a difference.
+* 
+**Returns:**
+
+* `(bool, str)`: Indicating whether the set is a difference set and a message.
+* 
+
+### <a id='ura_mura(p)'></a> `ura_mura(p)`
+
+Generates a Uniformly Redundant Array (URA) or Modified Uniformly Redundant Array (MURA) based on a prime number `p`.
+
+**Parameters:**
+
+* `p` (`int`): A prime number.
+
+**Returns:**
+
+* `numpy.ndarray`: A 1D array representing the URA or MURA.
 
 <a id='fits_utils.py'></a>
 ## FITS Utils
