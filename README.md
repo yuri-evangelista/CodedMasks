@@ -5,54 +5,54 @@ Comes with no warranty (and with a punk fashioned code...)
 ## Code Utils
 ### Tools to generate URA, MURA and other codes
 [.\mask_utils\code_utils.py](#code_utils.py)
-- [next_prime](#next_prime(n))
-- [ura_mura](#ura_mura(p))
-- [bura](#bura(p,-modified=False))
-- [bura33](#bura33(p))
-- [cura](#cura(p))
-- [is_cyclic_difference_set](#is_cyclic_difference_set(s,-v,-k,-lambda_val))
+- [next_prime](#next_prime)
+- [ura_mura](#ura_mura)
+- [bura](#bura)
+- [bura33](#bura33)
+- [cura](#cura)
+- [is_cyclic_difference_set](#is_cyclic_difference_set)
 
 ## Fits Utils
 ### Tools to read and write WFM fits
 [.\mask_utils\fits_utils.py](#fits_utils.py)
-- [read_fits_events](#read_fits_events(filein,-header0=False,-header1=False,-verbose=False))
-- [read_mask_bulk](#read_mask_bulk(fitsfile,-ext,-header_out=False,-verbose=False))
-- [write_mask_fits](#write_mask_fits(fitsfile,-mask,-rmatrix,-bulk,-props))
-- [fits_mask_to_dxf](#fits_mask_to_dxf(fitsin,-dxfout))
+- [read_fits_events](#read_fits_events)
+- [read_mask_bulk](#read_mask_bulk)
+- [write_mask_fits](#write_mask_fits)
+- [fits_mask_to_dxf](#fits_mask_to_dxf)
 
 ## Image Utils
 ### Tools to manipulate images
 [.\mask_utils\image_utils.py](#image_utils.py)
-- [shift](#shift(arr,-lag))
-- [fshift](#fshift(arr,-lagx,-lagy))
-- [erosion](#erosion(arr,-cut,-step))
-- [pad_array](#pad_array(arr,-npadx,-npady))
-- [float_gcd](#float_gcd(a,-b,-rtol=1e-05,-atol=1e-05))
-- [upscale](#upscale(array,-fx,-fy))
+- [shift](#shift)
+- [fshift](#fshift)
+- [erosion](#erosion)
+- [pad_array](#pad_array)
+- [float_gcd](#float_gcd)
+- [upscale](#upscale)
 
 ## Imaging Utils
 ### Tools to perform decoding operations and calculate system properties (effective area, solid angle, etc.)
 [.\mask_utils\imaging_utils.py](#imaging_utils.py)
-- [get_openfraction](#get_openfraction(mask))
-- [get_angular_res](#get_angular_res(m_pitch,-d_pitch,-m_d_distance,-degrees=False))
-- [get_coding_power](#get_coding_power(m_pitch,-d_pitch,-open_fraction))
-- [open_fraction_vs_off_axis](#open_fraction_vs_off_axis(mask,-mask_thickness,-mask_x_pitch,-mask_y_pitch,-thetax,-thetay,-degrees=True))
-- [eff_area_vs_off_axis](#eff_area_vs_off_axis(mask,-det,-x_pitch_ups,-y_pitch_ups,-focal,-mask_thickness,-thetax,-thetay,-degrees=True))
+- [get_openfraction](#get_openfraction)
+- [get_angular_res](#get_angular_res)
+- [get_coding_power](#get_coding_power)
+- [open_fraction_vs_off_axis](#open_fraction_vs_off_axis)
+- [eff_area_vs_off_axis](#eff_area_vs_off_axis)
 - [snr_vs_off_axis](#snr_vs_off_axis)
-- [omega_plate_offaxis](#omega_plate_offaxis(a,-b,-d,-a,-b))
-- [solid_angle](#solid_angle(bulk,-xstep,-ystep,-m_d_distance,-nobulk=False))
-- [get_detimage](#get_detimage(data,-xedges,-yedges))
-- [decode](#decode(detimage,-rmatrix,-bulk))
-- [decode_var](#decode_var(detimage,-rmatrix,-bulk,-m_d_distance,-elxdim,-elydim))
-- [get_skysign](#get_skysign(skyimage,-varimage))
-- [get_detimage_edges](#get_detimage_edges(xstep,-ystep,-nx,-ny))
-- [get_skycoords](#get_skycoords(skyimage,-xstep,-ystep,-m_d_distance,-verbose=False,-radians=False))
-- [generate_bulk](#generate_bulk(mask_shape,-elxdim,-elydim))
+- [omega_plate_offaxis](#omega_plate_offaxis)
+- [solid_angle](#solid_angle)
+- [get_detimage](#get_detimage)
+- [decode](#decode)
+- [decode_var](#decode_var)
+- [get_skysign](#get_skysign)
+- [get_detimage_edges](#get_detimage_edges)
+- [get_skycoords](#get_skycoords)
+- [generate_bulk](#generate_bulk)
 
 ## Other Utils
 ### Miscellaneous tools
 [.\mask_utils\other_utils.py](#other_utils.py)
-- [filter_source](#filter_source(data,-ra,-dec,-verbose=False))
+- [filter_source](#filter_source)
 
 <hr style="border:2px solid">
 
@@ -63,7 +63,7 @@ Comes with no warranty (and with a punk fashioned code...)
 
 This module provides functions for generating different types of coded mask arrays, specifically Uniformly Redundant Arrays (URA), Modified Uniformly Redundant Arrays (MURA), Biquadratic Uniformly Redundant Arrays (BURA), and a specific BURA variant with ~0.33 open fraction.
 
-### <a id='next_prime(n)'></a> `next_prime(n)`
+### <a id='next_prime'></a> `next_prime(n)`
 
 Finds the next prime number greater than or equal to `n`.
 
@@ -75,7 +75,7 @@ Finds the next prime number greater than or equal to `n`.
 
 * `int`: The next prime number.
 
-### <a id='ura_mura(p)'></a> `ura_mura(p)`
+### <a id='ura_mura'></a> `ura_mura(p)`
 
 Generates a Uniformly Redundant Array (URA) or Modified Uniformly Redundant Array (MURA) based on a prime number `p`.
 
@@ -91,7 +91,7 @@ Generates a Uniformly Redundant Array (URA) or Modified Uniformly Redundant Arra
 
 * `TypeError`: If `p` is not a prime number.
 
-### <a id='bura(p,-modified=False)'></a> `bura(p, modified=False)`
+### <a id='bura'></a> `bura(p, modified=False)`
 
 Generates a Biquadratic Uniformly Redundant Array (BURA).
 
@@ -108,7 +108,7 @@ Generates a Biquadratic Uniformly Redundant Array (BURA).
 
 * `TypeError`: If `p` is not prime or does not fulfill the condition $p = 4x^2 + 1$ with $x$ odd.
 
-### <a id='bura33(p)'></a> `bura33(p)`
+### <a id='bura33'></a> `bura33(p)`
 
 Generates a biquadratic URA with an open fraction of approximately 0.33.
 
@@ -129,7 +129,7 @@ The biquadratic residues of primes $v = 4x^2 + 9$, where $x$ is odd, form a diff
 
 * `TypeError`: If `p` is not prime or does not fulfill the condition $p = 4x^2 + 9$ with $x$ odd.
 
-### <a id='ura_mura(p)'></a> `ura_mura(p)`
+### <a id='ura_mura'></a> `ura_mura(p)`
 
 Generates a Uniformly Redundant Array (URA) or Modified Uniformly Redundant Array (MURA) based on a prime number `p`.
 
@@ -141,7 +141,7 @@ Generates a Uniformly Redundant Array (URA) or Modified Uniformly Redundant Arra
 
 * `numpy.ndarray`: A 1D array representing the URA or MURA.
 
-### <a id='is_cyclic_difference_set(s,-v,-k,-lambda_val)'></a> `is_cyclic_difference_set(s, v, k, lambda_val)`
+### <a id='is_cyclic_difference_set'></a> `is_cyclic_difference_set(s, v, k, lambda_val)`
 
 Tests if a given set is a cyclic (v, k, lambda) difference set.
 
@@ -160,7 +160,7 @@ Tests if a given set is a cyclic (v, k, lambda) difference set.
 
 This module provides functions for reading and writing FITS files, particularly for mask data, and converting FITS mask data to DXF format.
 
-### <a id='read_fits_events(filein,-header0=False,-header1=False,-verbose=False)'></a> `read_fits_events(filein, header0=False, header1=False, verbose=False)`
+### <a id='read_fits_events'></a> `read_fits_events(filein, header0=False, header1=False, verbose=False)`
 
 Reads event data from a FITS file.
 
@@ -177,7 +177,7 @@ Reads event data from a FITS file.
 * `astropy.io.fits.Header`, optional: The primary header if `header0` is `True`.
 * `astropy.io.fits.Header`, optional: The header of the first extension if `header1` is `True`.
 
-### <a id='read_mask_bulk(fitsfile,-ext,-header_out=False,-verbose=False)'></a> `read_mask_bulk(fitsfile, ext, header_out=False, verbose=False)`
+### <a id='read_mask_bulk'></a> `read_mask_bulk(fitsfile, ext, header_out=False, verbose=False)`
 
 Reads mask data from a WFM mask FITS file (`wfm_mask.fits`).
 
@@ -200,7 +200,7 @@ Reads mask data from a WFM mask FITS file (`wfm_mask.fits`).
 * `numpy.ndarray`: A 2D array representing the mask data.
 * `astropy.io.fits.Header`, optional: The header of the specified extension if `header_out` is `True`.
 
-### <a id='write_mask_fits(fitsfile,-mask,-rmatrix,-bulk,-props)'></a> `write_mask_fits(fitsfile, mask, rmatrix, bulk, props)`
+### <a id='write_mask_fits'></a> `write_mask_fits(fitsfile, mask, rmatrix, bulk, props)`
 
 Writes a FITS file with mask-related extensions.
 
@@ -218,7 +218,7 @@ Writes a FITS file with mask-related extensions.
 * `bulk` (`numpy.ndarray`): The bulk array.
 * `props` (`dict`): A dictionary containing properties to be written into the FITS headers, such as 'ELXN', 'ELYDIM', 'ELXDIM', 'MXDIM', 'MYDIM'.
 
-### <a id='fits_mask_to_dxf(fitsin,-dxfout)'></a> `fits_mask_to_dxf(fitsin, dxfout)`
+### <a id='fits_mask_to_dxf'></a> `fits_mask_to_dxf(fitsin, dxfout)`
 
 Writes a DXF file of the mask with all open elements as polylines.
 
@@ -232,7 +232,7 @@ Writes a DXF file of the mask with all open elements as polylines.
 
 This module provides various utility functions for image manipulation, including shifting, erosion, padding, and upscaling.
 
-### <a id='shift(arr,-lag)'></a> `shift(arr, lag)`
+### <a id='shift'></a> `shift(arr, lag)`
 
 Shifts a 2D array horizontally (along `axis=1`) by a given `lag`. Elements shifted out are replaced with zeros.
 
@@ -245,7 +245,7 @@ Shifts a 2D array horizontally (along `axis=1`) by a given `lag`. Elements shift
 
 * `numpy.ndarray`: The shifted array.
 
-### <a id='fshift(arr,-lagx,-lagy)'></a> `fshift(arr, lagx, lagy)`
+### <a id='fshift'></a> `fshift(arr, lagx, lagy)`
 
 Shifts a 2D array with fractional shifts using SciPy's `ndimage.shift`.
 
@@ -259,7 +259,7 @@ Shifts a 2D array with fractional shifts using SciPy's `ndimage.shift`.
 
 * `numpy.ndarray`: The fractionally shifted array.
 
-### <a id='erosion(arr,-cut,-step)'></a> `erosion(arr, cut, step)`
+### <a id='erosion'></a> `erosion(arr, cut, step)`
 
 Performs 2D matrix erosion on a mask array to simulate finite thickness effects in shadow projections. It "thins" the mask elements across the columns' direction. The erosion is performed only on the correct side of open (1) mask elements: right side if `cut` is negative (thetaX negative), and left side if `cut` is positive (thetaX positive). The function first erodes all integer bins (replacing 1s with 0s). If `cut` is not an integer, a fractional transparency is applied to the last eroded bin.
 
@@ -273,7 +273,7 @@ Performs 2D matrix erosion on a mask array to simulate finite thickness effects 
 
 * `numpy.ndarray`: The eroded mask array.
 
-### <a id='pad_array(arr,-npadx,-npady)'></a> `pad_array(arr, npadx, npady)`
+### <a id='pad_array'></a> `pad_array(arr, npadx, npady)`
 
 Pads a 2D array with zeros.
 
@@ -287,7 +287,7 @@ Pads a 2D array with zeros.
 
 * `numpy.ndarray`: The padded array.
 
-### <a id='float_gcd(a,-b,-rtol=1e-05,-atol=1e-05)'></a> `float_gcd(a, b, rtol=1e-05, atol=1e-05)`
+### <a id='float_gcd'></a> `float_gcd(a, b, rtol=1e-05, atol=1e-05)`
 
 Calculates the greatest common divisor (GCD) for floating-point numbers with specified relative and absolute tolerances.
 
@@ -302,7 +302,7 @@ Calculates the greatest common divisor (GCD) for floating-point numbers with spe
 
 * `float`: The greatest common divisor.
 
-### <a id='upscale(array,-fx,-fy)'></a> `upscale(array, fx, fy)`
+### <a id='upscale'></a> `upscale(array, fx, fy)`
 
 Upscales a 2D array by repeating its elements.
 
@@ -321,7 +321,7 @@ Upscales a 2D array by repeating its elements.
 
 This module provides functions for calculating imaging properties such as open fraction, angular resolution, coding power, and effective area, as well as functions for decoding images and handling detector geometry.
 
-### <a id='get_openfraction(mask)'></a> `get_openfraction(mask)`
+### <a id='get_openfraction'></a> `get_openfraction(mask)`
 
 Calculates the open fraction of a mask.
 
@@ -333,7 +333,7 @@ Calculates the open fraction of a mask.
 
 * `float`: The open fraction (sum of mask elements divided by total size).
 
-### <a id='get_angular_res(m_pitch,-d_pitch,-m_d_distance,-degrees=False)'></a> `get_angular_res(m_pitch, d_pitch, m_d_distance, degrees=False)`
+### <a id='get_angular_res'></a> `get_angular_res(m_pitch, d_pitch, m_d_distance, degrees=False)`
 
 Calculates the angular resolution of the imaging system.
 
@@ -348,7 +348,7 @@ Calculates the angular resolution of the imaging system.
 
 * `float`: The angular resolution.
 
-### <a id='get_coding_power(m_pitch,-d_pitch,-open_fraction)'></a> `get_coding_power(m_pitch, d_pitch, open_fraction)`
+### <a id='get_coding_power'></a> `get_coding_power(m_pitch, d_pitch, open_fraction)`
 
 Calculates the coding power based on Skinner 2008.
 
@@ -362,7 +362,7 @@ Calculates the coding power based on Skinner 2008.
 
 * `float`: The coding power.
 
-### <a id='open_fraction_vs_off_axis(mask,-mask_thickness,-mask_x_pitch,-mask_y_pitch,-thetax,-thetay,-degrees=True)'></a> `open_fraction_vs_off_axis(mask, mask_thickness, mask_x_pitch, mask_y_pitch, thetaX, thetaY, degrees=True)`
+### <a id='open_fraction_vs_off_axis'></a> `open_fraction_vs_off_axis(mask, mask_thickness, mask_x_pitch, mask_y_pitch, thetaX, thetaY, degrees=True)`
 
 Calculates the open fraction of the mask as a function of off-axis angles, considering vignetting.
 
@@ -380,7 +380,7 @@ Calculates the open fraction of the mask as a function of off-axis angles, consi
 
 * `float`: The vignetted open fraction.
 
-### <a id='eff_area_vs_off_axis(mask,-det,-x_pitch_ups,-y_pitch_ups,-focal,-mask_thickness,-thetax,-thetay,-degrees=True)'></a> `eff_area_vs_off_axis(mask, det, x_pitch_ups, y_pitch_ups, focal, mask_thickness, thetaX, thetaY, degrees=True)`
+### <a id='eff_area_vs_off_axis'></a> `eff_area_vs_off_axis(mask, det, x_pitch_ups, y_pitch_ups, focal, mask_thickness, thetaX, thetaY, degrees=True)`
 
 Calculates the effective area of the system as a function of off-axis angles, accounting for vignetting.
 
@@ -441,7 +441,7 @@ Estimate the system sensitivity as a function of the off-axis angle for a given 
     The calculated approximate **Signal-to-Noise Ratio (SNR)** for the given off-axis angles and system parameters.
 
 
-### <a id='omega_plate_offaxis(a,-b,-d,-a,-b)'></a> `omega_plate_offaxis(a, b, d, A, B)`
+### <a id='omega_plate_offaxis'></a> `omega_plate_offaxis(a, b, d, A, B)`
 
 Calculates the solid angle subtended by a rectangular plate when the line-of-sight hits it off-center. This function is based on equation 34 from [https://vixra.org/pdf/2001.0603v2.pdf](https://vixra.org/pdf/2001.0603v2.pdf).
 
@@ -467,7 +467,7 @@ The calculation considers four sub-rectangles:
 
 * `float`: The solid angle.
 
-### <a id='solid_angle(bulk,-xstep,-ystep,-m_d_distance,-nobulk=False)'></a> `solid_angle(bulk, xstep, ystep, m_d_distance, nobulk=False)`
+### <a id='solid_angle'></a> `solid_angle(bulk, xstep, ystep, m_d_distance, nobulk=False)`
 
 Calculates the solid angle for each pixel of a bulk array.
 
@@ -483,7 +483,7 @@ Calculates the solid angle for each pixel of a bulk array.
 
 * `numpy.ndarray`: An array of solid angle values for each pixel.
 
-### <a id='get_detimage(data,-xedges,-yedges)'></a> `get_detimage(data, xedges, yedges)`
+### <a id='get_detimage'></a> `get_detimage(data, xedges, yedges)`
 
 Generates a 2D histogram (detector image) from event data.
 
@@ -497,7 +497,7 @@ Generates a 2D histogram (detector image) from event data.
 
 * `numpy.ndarray`: The 2D detector image.
 
-### <a id='decode(detimage,-rmatrix,-bulk)'></a> `decode(detimage, rmatrix, bulk)`
+### <a id='decode'></a> `decode(detimage, rmatrix, bulk)`
 
 Decodes a detector image using the R-matrix and bulk array.
 
@@ -511,7 +511,7 @@ Decodes a detector image using the R-matrix and bulk array.
 
 * `numpy.ndarray`: The decoded sky image.
 
-### <a id='decode_var(detimage,-rmatrix,-bulk,-m_d_distance,-elxdim,-elydim)'></a> `decode_var(detimage, rmatrix, bulk, m_d_distance, elxdim, elydim)`
+### <a id='decode_var'></a> `decode_var(detimage, rmatrix, bulk, m_d_distance, elxdim, elydim)`
 
 Calculates the variance image for decoding, based on the statistical approach outlined in [this document](https://github.com/yuri-evangelista/CodedMasks/blob/main/Coded_aperture_variance_202507.pdf).
 
@@ -528,7 +528,7 @@ Calculates the variance image for decoding, based on the statistical approach ou
 
 * `numpy.ndarray`: The variance image.
 
-### <a id='get_skysign(skyimage,-varimage)'></a> `get_skysign(skyimage, varimage)`
+### <a id='get_skysign'></a> `get_skysign(skyimage, varimage)`
 
 Calculates the sky significance image from a sky image and its corresponding variance image.
 
@@ -541,7 +541,7 @@ Calculates the sky significance image from a sky image and its corresponding var
 
 * `numpy.ndarray`: The sky significance image.
 
-### <a id='get_detimage_edges(xstep,-ystep,-nx,-ny)'></a> `get_detimage_edges(xstep, ystep, nx, ny)`
+### <a id='get_detimage_edges'></a> `get_detimage_edges(xstep, ystep, nx, ny)`
 
 Generates the bin edges for a detector image.
 
@@ -556,7 +556,7 @@ Generates the bin edges for a detector image.
 
 * `tuple`: A tuple containing two `numpy.ndarray` objects: `xedges` and `yedges`.
 
-### <a id='get_skycoords(skyimage,-xstep,-ystep,-m_d_distance,-verbose=False,-radians=False)'></a> `get_skycoords(skyimage, xstep, ystep, m_d_distance, verbose=False, radians=False)`
+### <a id='get_skycoords'></a> `get_skycoords(skyimage, xstep, ystep, m_d_distance, verbose=False, radians=False)`
 
 Calculates the sky coordinates (angles) corresponding to the sky image pixels.
 
@@ -573,7 +573,7 @@ Calculates the sky coordinates (angles) corresponding to the sky image pixels.
 
 * `tuple`: A tuple containing two `numpy.ndarray` objects: x-coordinates and y-coordinates.
 
-### <a id='generate_bulk(mask_shape,-elxdim,-elydim)'></a> `generate_bulk(mask_shape, elxdim, elydim)`
+### <a id='generate_bulk'></a> `generate_bulk(mask_shape, elxdim, elydim)`
 
 Generates a bulk array representing the sensitive regions of the WFM detector plane.
 
@@ -592,7 +592,7 @@ Generates a bulk array representing the sensitive regions of the WFM detector pl
 
 This module contains utility functions for general data manipulation.
 
-### <a id='filter_source(data,-ra,-dec,-verbose=False)'></a> `filter_source(data, ra, dec, verbose=False)`
+### <a id='filter_source'></a> `filter_source(data, ra, dec, verbose=False)`
 
 Filters a dataset based on Right Ascension (RA) and Declination (DEC) values.
 
