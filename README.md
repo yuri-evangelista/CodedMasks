@@ -38,7 +38,7 @@ Comes with no warranty (and with a punk fashioned code...)
 - [get_coding_power](#get_coding_power(m_pitch,-d_pitch,-open_fraction))
 - [open_fraction_vs_off_axis](#open_fraction_vs_off_axis(mask,-mask_thickness,-mask_x_pitch,-mask_y_pitch,-thetax,-thetay,-degrees=True))
 - [eff_area_vs_off_axis](#eff_area_vs_off_axis(mask,-det,-x_pitch_ups,-y_pitch_ups,-focal,-mask_thickness,-thetax,-thetay,-degrees=True))
-- [snr_vs_off_axis](#snr_vs_off_axis(s_counts,-b_counts,-mask,-bulk,-mask_x_pitch,-mask_y_pitch,-ELXDIM,-ELYDIM,-det_x_pitch,-focal,-mask_thickness,-thetaX,-thetaY,-degrees=True,-verbose=False))
+- [snr_vs_off_axis](#snr_vs_off_axis)
 - [omega_plate_offaxis](#omega_plate_offaxis(a,-b,-d,-a,-b))
 - [solid_angle](#solid_angle(bulk,-xstep,-ystep,-m_d_distance,-nobulk=False))
 - [get_detimage](#get_detimage(data,-xedges,-yedges))
@@ -400,7 +400,7 @@ Calculates the effective area of the system as a function of off-axis angles, ac
 
 * `float`: The effective area in the same units as the input pitches and focal length (e.g., mm$^2$ or cm$^2$).
 
-### <a id='snr_vs_off_axis(s_counts,-b_counts,-mask,-bulk,-mask_x_pitch,-mask_y_pitch,-ELXDIM,-ELYDIM,-det_x_pitch,-focal,-mask_thickness,-thetaX,-thetaY,-degrees=True,-verbose=False)'></a> `snr_vs_off_axis(s_counts, b_counts, mask, bulk, mask_x_pitch, mask_y_pitch, ELXDIM, ELYDIM, det_x_pitch, focal, mask_thickness, thetaX, thetaY, degrees=True, verbose=False)`
+### <a id='snr_vs_off_axis'></a> `snr_vs_off_axis(s_counts, b_counts, mask, bulk, mask_x_pitch, mask_y_pitch, ELXDIM, ELYDIM, det_x_pitch, focal, mask_thickness, thetaX, thetaY, degrees=True, verbose=False)`
 
 Estimate the system sensitivity as a function of the off-axis angle for a given camera geometry and mask code. Makes use of and from G. K. Skinner - "The sensitivity of coded mask telescopes" (2008)
 
