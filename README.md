@@ -399,6 +399,45 @@ Calculates the effective area of the system as a function of off-axis angles, ac
 
 * `float`: The effective area in the same units as the input pitches and focal length (e.g., mm$^2$ or cm$^2$).
 
+### a id='snr_vs_off_axis(s_counts,-b_counts,-mask,-bulk,-mask_x_pitch,-mask_y_pitch,-ELXDIM,-ELYDIM,-det_x_pitch,-focal,-mask_thickness,-thetaX,-thetaY,-degrees=True,-verbose=False)'></a> `snr_vs_off_axis(s_counts, b_counts, mask, bulk, mask_x_pitch, mask_y_pitch, ELXDIM, ELYDIM, det_x_pitch, focal, mask_thickness, thetaX, thetaY, degrees=True, verbose=False)`
+
+**Parameters:**
+  * **`s_counts`** (`float` or `int`):
+    The expected number of **signal counts** (photons from the source).
+  * **`b_counts`** (`float` or `int`):
+    The expected number of **background counts** (noise photons).
+  * **`mask`** (`numpy.ndarray`):
+    A 2D NumPy array representing the **coded aperture mask**. Typically, this is a binary mask (e.g., 0s and 1s).
+  * **`bulk`** (`numpy.ndarray`):
+    A 2D NumPy array representing the **detector bulk**. Its specific structure depends on how the `eff_area_vs_off_axis` function is implemented, but it generally relates to the detector's properties.
+  * **`mask_x_pitch`** (`float`):
+    The physical size of a single element (pixel) of the mask along the **x-axis**, in appropriate units (e.g., mm).
+  * **`mask_y_pitch`** (`float`):
+    The physical size of a single element (pixel) of the mask along the **y-axis**, in appropriate units (e.g., mm).
+  * **`ELXDIM`** (`int`):
+    The number of elements (pixels) in the detector along the **x-dimension**.
+  * **`ELYDIM`** (`int`):
+    The number of elements (pixels) in the detector along the **y-dimension**.
+  * **`det_x_pitch`** (`float`):
+    The physical size of a single element (pixel) of the detector along the **x-axis**, in appropriate units (e.g., mm).
+  * **`focal`** (`float`):
+    The **focal length** of the system (distance between the mask and the detector), in appropriate units (e.g., mm).
+  * **`mask_thickness`** (`float`):
+    The physical **thickness of the mask material**, in appropriate units (e.g., mm). This is important for understanding off-axis attenuation effects.
+  * **`thetaX`** (`float`):
+    The **off-axis angle in the x-direction**. By default, it's assumed to be in degrees.
+  * **`thetaY`** (`float`):
+    The **off-axis angle in the y-direction**. By default, it's assumed to be in degrees.
+  * **`degrees`** (`bool`, optional):
+    If `True` (default), `thetaX` and `thetaY` are interpreted as degrees and converted to radians internally. If `False`, they are assumed to be in radians.
+  * **`verbose`** (`bool`, optional):
+    If `True`, the function will print intermediate calculation values (on-axis open fraction, coding power, off-axis open fraction, and off-axis area) to the console. Defaults to `False`.
+
+**Returns:**
+  * **`float`**:
+    The calculated approximate **Signal-to-Noise Ratio (SNR)** for the given off-axis angles and system parameters.
+
+
 ### <a id='omega_plate_offaxis(a,-b,-d,-a,-b)'></a> `omega_plate_offaxis(a, b, d, A, B)`
 
 Calculates the solid angle subtended by a rectangular plate when the line-of-sight hits it off-center. This function is based on equation 34 from [https://vixra.org/pdf/2001.0603v2.pdf](https://vixra.org/pdf/2001.0603v2.pdf).
