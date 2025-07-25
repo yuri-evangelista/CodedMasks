@@ -24,6 +24,41 @@ def read_fits_events(filein, header0=False, header1=False, verbose=False):
         elif header0 and header1:
             return events, header_0, header_1
 
+def read_mask_bulk(fitsfile, ext, header_out=False, verbose=False):
+    r"""
+    Reads data from wfm_mask.fits
+    Extensions are:
+        0  PRIMARY       1 PrimaryHDU      28   ()      
+        1  OR_MASK       1 BinTableHDU     36   676000R x 3C   [E, E, E]   
+        2  MASK          1 BinTableHDU     36   676000R x 3C   [E, E, E]   
+        3  RMATRIX       1 BinTableHDU     38   676000R x 3C   [E, E, E]   
+        4  SENS          1 BinTableHDU     36   676000R x 3C   [E, E, E]   
+    """
+
+    with pyfits.open(fitsfile) as hdu_list:     
+        if verbose:
+            hdu_list.info()
+        header = hdu_list[ext].header
+        NELE   = header['NAXIS2']
+        ELXDIM = header['ELXDIM']
+        ELYDIM = header['ELYDIM']
+        ELXN   = header['ELXN']
+        ELYN   = header['ELYN']
+        MINX   = header['MINX']
+        MINY   = header['MINY']
+    
+    
+        data=Table(hdu_list[ext].data)
+        arr = np.zeros((ELXN, ELYN))
+        for ele in range(NELE):
+            ix = int(np.round(  ((data['X'][ele] - MINX - ELXDIM/2)/ELXDIM) ) )
+            iy = int(np.round(  ((data['Y'][ele] - MINY - ELYDIM/2)/ELYDIM) ) )
+            arr[ix,iy] = data['VAL'][ele]
+
+        if header_out:
+            return arr, header
+        else:
+            return arr
 
 def read_mask_bulk(fitsfile, ext, header_out=False, verbose=False):
     r"""
@@ -61,12 +96,7 @@ def read_mask_bulk(fitsfile, ext, header_out=False, verbose=False):
         else:
             return arr
 
-import numpy as np
-import astropy.io.fits as pyfits
-from astropy.table import Table, Column
-import pprint
-
-def write_mask_fits(fitsfile, mask, rmatrix, bulk, props):
+def write_mask_fits(fitsfile, mask, rmatrix, bulk, props, props0):
     r"""
     Writes a FITS file with the following extensions:
         1 - OR_MASK
@@ -90,6 +120,7 @@ def write_mask_fits(fitsfile, mask, rmatrix, bulk, props):
 
     #Generating primary HDU
     primary_hdu = pyfits.PrimaryHDU()
+    primary_hdu.header.update(props0)
 
     #Generating columns
     x_col = pyfits.Column(name='X', format='E', array=X)
