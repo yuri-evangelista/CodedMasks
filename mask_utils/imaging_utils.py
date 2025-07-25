@@ -189,10 +189,10 @@ def get_skycoords(skyimage, xstep, ystep, m_d_distance, verbose=False, radians=F
 
 def generate_bulk(mask_shape, ELXDIM, ELYDIM):
     #From WFM detector plane geometry
-    det_ext_border_x = 157.996
-    det_ext_border_y = 153.176
-    det_int_border_x = 28.204
-    det_int_border_y = 12.824
+    det_ext_border_x = 157.976#157.996
+    det_ext_border_y = 153.051#153.176
+    det_int_border_x = 28.184#28.204
+    det_int_border_y = 12.699#12.824
 
     #Defining bulk array
     bulk = np.ones(mask_shape)
