@@ -170,7 +170,7 @@ def get_detimage_edges(xstep, ystep, nx, ny):
     return xedges, yedges
 
 def get_skycoords(skyimage, xstep, ystep, m_d_distance, verbose=False, radians=False):
-    s = shape(skyimage)
+    s = np.shape(skyimage)
 
     x = (np.linspace(0, s[0]*xstep, num=s[0]) )
     y = (np.linspace(0, s[1]*ystep, num=s[1]) )
@@ -215,15 +215,16 @@ def snr_vs_off_axis(s_counts, b_counts, mask, bulk, mask_x_pitch, mask_y_pitch,
     # Returns the approximate sensitivity following eq. 13 and eq. 23 of Skinner 2008
     # s_counts are the source counts (per unit area) when the mask is open
     # b_counts are the bkg counts per detector unit area
-
+    #
     if degrees:
         thetaX = np.deg2rad(thetaX)
         thetaY = np.deg2rad(thetaY)
     
 
     on_axis_of = np.sum(mask)/mask.size
-    coding_power = get_coding_power(mask_x_pitch, det_x_pitch, on_axis_of) * cpower_detres
     off_axis_of = open_fraction_vs_off_axis(mask, mask_thickness, ELXDIM, ELYDIM, thetaX, thetaY, degrees=False)
+
+    coding_power = get_coding_power(mask_x_pitch, det_x_pitch, off_axis_of) * cpower_detres
     
     off_axis_area =  0.01 * eff_area_vs_off_axis(mask.T.astype('int32'), bulk.T, ELXDIM, ELYDIM, focal, mask_thickness, thetaX, thetaY, degrees=False)
     
@@ -235,6 +236,37 @@ def snr_vs_off_axis(s_counts, b_counts, mask, bulk, mask_x_pitch, mask_y_pitch,
         print("Off-axis area:", off_axis_area)
 
     snr = coding_power * s_counts/on_axis_of * np.sqrt( (off_axis_area * (1-off_axis_of))/ (off_axis_of * s_counts/on_axis_of + b_counts/on_axis_of))
+
+
+    return snr
+
+def snr_vs_off_axis_eq6(s_counts, b_counts, mask, bulk, mask_x_pitch, mask_y_pitch, 
+                    ELXDIM, ELYDIM, det_x_pitch, focal, mask_thickness, 
+                    thetaX, thetaY, degrees=True, verbose=False, cpower_detres=1.0):
+    # Returns the approximate sensitivity following eq. 6 and eq. 23 of Skinner 2008
+    # s_counts are the source counts (per unit area) when the mask is open
+    # b_counts are the bkg counts per detector unit area
+    #
+    if degrees:
+        thetaX = np.deg2rad(thetaX)
+        thetaY = np.deg2rad(thetaY)
+    
+
+    on_axis_of = np.sum(mask)/mask.size
+    off_axis_of = open_fraction_vs_off_axis(mask, mask_thickness, ELXDIM, ELYDIM, thetaX, thetaY, degrees=False)
+
+    coding_power = get_coding_power(mask_x_pitch, det_x_pitch, off_axis_of) * cpower_detres
+    
+    off_axis_area =  0.01 * eff_area_vs_off_axis(mask.T.astype('int32'), bulk.T, ELXDIM, ELYDIM, focal, mask_thickness, thetaX, thetaY, degrees=False)
+    
+
+    if verbose:
+        print("On-axis OF:", on_axis_of)
+        print("Coding power:", coding_power)
+        print("Off-axis OF:", off_axis_of)
+        print("Off-axis area:", off_axis_area)
+
+    snr = coding_power * s_counts/off_axis_of * np.sqrt( (off_axis_area * (1-off_axis_of))/ ((1-off_axis_of) * s_counts/on_axis_of + b_counts/on_axis_of))
 
 
     return snr
