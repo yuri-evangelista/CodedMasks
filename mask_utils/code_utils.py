@@ -164,3 +164,8 @@ v = np.arange(p, dtype=np.int64)**2 % p
 is_cyclic, result_set = is_cyclic_difference_set(v, p, k, lam)
 print(result_set)
 """
+def reshape_ext_diagonal(array, nx, ny):
+    out = np.zeros( (nx, ny), dtype=array.dtype)
+    for i in range (array.size):
+        out[i % nx, i % ny] = array[i]
+    return out
