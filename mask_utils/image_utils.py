@@ -51,6 +51,48 @@ def erosion(arr, cut, step):
     border = (cutted - shift(cutted, int(np.sign(cut)))) > 0
     return cutted - border * erosion_value
 
+def ferosion(arr, cut, step):
+    """
+    2D matrix erosion for simulating finite thickness effect in shadow projections.
+    It takes a mask array and "thins" the mask elements across the columns' direction.
+    """
+    # number of bins to cut
+    ncuts = int(cut / step)# + int(np.sign(cut))
+    
+    arr_mask = (arr > 0) & (fshift(arr, ncuts , 0 ) > 0)
+    cutted = arr * arr_mask if ncuts else arr
+
+    # array indexes to be fractionally reduced:
+    #   - the bin with the decimal values is the one
+    #     to the left or right wrt the cutted bins
+    erosion_value =  abs(cut / step - ncuts)
+    
+    cutted_mask = (
+        np.array((cutted > 0), dtype=int) - np.array((fshift(cutted, int(np.sign(cut)), 0) > 0), dtype=int)
+    )
+    border = (cutted_mask > 0)
+    return cutted * (1.0 - border * erosion_value)
+
+def apply_vignetting(detimage, xshift, yshift, focal, ELXDIM, ELYDIM, MTHICK):
+    angle_x_rad = -np.arctan(xshift*ELXDIM / focal) #note the -1
+    angle_y_rad = -np.arctan(yshift*ELYDIM / focal) #note the -1
+
+    red_factor_x = MTHICK * np.tan(angle_x_rad) 
+    red_factor_y = MTHICK * np.tan(angle_y_rad) 
+
+    #The following takes into account the fractional shift and recalculate the red_factor starting from the closer external pixel boundary
+    #(see new_erosion_20251024.ipynb for more details)
+    
+    farest_border_x = abs(xshift - int(xshift))
+    farest_border_y = abs(yshift - int(yshift))
+
+    red_factor_x_corr = red_factor_x + np.sign(red_factor_x) * (1- farest_border_x)*ELXDIM
+    red_factor_y_corr = red_factor_y + np.sign(red_factor_y) * (1- farest_border_y)*ELYDIM
+
+    sg1 = ferosion(detimage,  red_factor_x_corr, ELXDIM )
+    sg2 = ferosion(sg1.T, red_factor_y_corr, ELYDIM)
+    return sg2.T
+
 def pad_array(arr, npadx, npady):
     return np.pad(arr, ( (npadx, npadx), (npady, npady)), 'constant', constant_values=(0,0))
 
