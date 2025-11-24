@@ -1,5 +1,6 @@
 import numpy as np
 from scipy.ndimage import shift as ndshift
+from astropy.nddata import block_reduce
 
 def shift(arr, lag):
     shifted = np.roll(arr, lag, axis=1)
@@ -107,3 +108,8 @@ def upscale(array, fx, fy):
     for ax, factor in enumerate((fy, fx)):
         array = np.repeat(array, factor, axis=ax)
     return array
+
+def downscale(array, fx, fy, func):
+    #requires block_reduce from astropy.nddata
+    #func is the downscale function (e.g. np.sum, np.mean...)
+    return block_reduce(array, block_size=(fx, fy), func=func)
