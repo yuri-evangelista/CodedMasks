@@ -1,8 +1,65 @@
 import numpy as np
+import matplotlib.pyplot as plt
 import ezdxf
 import cv2
 import math
 import os
+
+def show_image(img, title, scale):
+    
+    # Calculate the new dimensions based on the original shape
+    # img.shape[1] is width, img.shape[0] is height
+    new_width = int(img.shape[1] * scale)
+    new_height = int(img.shape[0] * scale)
+    new_dimensions = (new_width, new_height)
+
+    # Perform the resize using INTER_AREA
+    downscaled = cv2.resize(img, new_dimensions, interpolation=cv2.INTER_AREA)
+    plt.figure(figsize=(10, 8))
+    plt.imshow(downscaled, cmap='gray')
+    plt.title(title)
+    plt.axis('off')
+    plt.show()
+
+def create_clean_binary_mask(img_gray, morph=False, otsu_fac=2):
+    """
+    Processes a microscope image to cleanly separate dark slits from bright background.
+    Returns the original grayscale image and the cleaned binary image.
+    """
+    # 1. Load the image in grayscale
+    #img_gray = cv2.imread(image_path, cv2.IMREAD_GRAYSCALE)
+    if img_gray is None:
+        raise ValueError("Image not found or unable to load.")
+
+    # 2. Apply CLAHE to equalize uneven microscope illumination
+    # tileGridSize divides the image into 3x3 blocks for local equalization
+    clahe = cv2.createCLAHE(clipLimit=1.0, tileGridSize=(3, 3))
+    equalized = clahe.apply(img_gray)
+
+    # 3. Denoise while preserving sharp geometric edges
+    # The kernel size (5) must be an odd number. Increase to 7 if the image is very noisy.
+    blurred = cv2.medianBlur(equalized, 7)
+
+    # 4. Automatic Thresholding using Otsu's method
+    # THRESH_BINARY_INV makes the dark slits white (255) and the bright background black (0)
+    _, binary = cv2.threshold(blurred, 0, 255, cv2.THRESH_BINARY_INV + otsu_fac * cv2.THRESH_OTSU)
+
+    if morph:
+
+        # 5. Morphological Cleanup
+        kernel = np.ones((3, 3), np.uint8)
+    
+        # Opening: removes small isolated noise in the background
+        clean_binary = cv2.morphologyEx(binary, cv2.MORPH_OPEN, kernel, iterations=1)
+    
+        # Closing: fills in small pinholes or imperfections inside the slits
+        clean_binary = cv2.morphologyEx(clean_binary, cv2.MORPH_CLOSE, kernel, iterations=1)
+    
+    else:
+        clean_binary = binary
+
+    return clean_binary
+
 
 '''
 CONTOUR ANALYSIS
@@ -91,7 +148,7 @@ def process_contours(image, contours, resolution_x, resolution_y):
             height_axis = -height_axis # Ensure it points from cap 1 to cap 2
         
         # 4. Filter contour points falling within a narrow band (+/- 15 pixels)
-        tolerance = 15 
+        tolerance = 20 #15 
         top_points_filtered, bot_points_filtered = [], []
     
         for pt in cnt:
