@@ -64,6 +64,72 @@ def create_clean_binary_mask(img_gray, morph=False, otsu_fac=2):
 '''
 CONTOUR ANALYSIS
 '''
+def robust_fit_line(contour_pts, side, distance_threshold=2.0, max_iters=10):
+    """
+    Iteratively fits a line using an asymmetric filter. 
+    If side is 'left', it aggressively rejects points far to the left (stains).
+    If side is 'right', it aggressively rejects points far to the right (stains).
+    Returns the line, the clean inliers, and the rejected outliers.
+    """
+    if len(contour_pts) < 5:
+        line = cv2.fitLine(np.array(contour_pts, dtype=np.float32), cv2.DIST_L2, 0, 0.01, 0.01)
+        return line, contour_pts, np.array([])
+        
+    pts = np.array(contour_pts, dtype=np.float32).reshape(-1, 2)
+    original_pts = pts.copy()
+    
+    for _ in range(max_iters):
+        # Fit current line
+        line = cv2.fitLine(pts, cv2.DIST_L2, 0, 0.01, 0.01)
+        vx, vy, x0, y0 = line[0][0], line[1][0], line[2][0], line[3][0]
+        
+        # Prevent division by zero for perfectly horizontal lines (safety check)
+        if abs(vy) < 1e-5:
+            vy = 1e-5 if vy >= 0 else -1e-5
+            
+        # Calculate the expected X coordinate on the line for every point's Y coordinate
+        expected_x = x0 + (vx / vy) * (pts[:, 1] - y0)
+        
+        # Calculate signed horizontal distance (dx). 
+        # Negative dx = point is to the LEFT of the line. Positive dx = point is to the RIGHT.
+        dx = pts[:, 0] - expected_x
+        
+        if side == 'left':
+            # True edge is on the right, stains bulge to the left (negative dx).
+            # Keep all points to the right, and allow only a small tolerance to the left.
+            inlier_mask = dx >= -distance_threshold
+        elif side == 'right':
+            # True edge is on the left, stains bulge to the right (positive dx).
+            # Keep all points to the left, and allow only a small tolerance to the right.
+            inlier_mask = dx <= distance_threshold
+        else:
+            inlier_mask = np.abs(dx) <= distance_threshold
+            
+        if np.all(inlier_mask) or np.sum(inlier_mask) < 5:
+            break
+            
+        pts = pts[inlier_mask]
+        
+    # Final fit on the clean inliers
+    final_line = cv2.fitLine(pts, cv2.DIST_L2, 0, 0.01, 0.01)
+    
+    # Calculate final outliers for visualization
+    vx, vy, x0, y0 = final_line[0][0], final_line[1][0], final_line[2][0], final_line[3][0]
+    if abs(vy) < 1e-5: vy = 1e-5 if vy >= 0 else -1e-5
+        
+    expected_x_orig = x0 + (vx / vy) * (original_pts[:, 1] - y0)
+    dx_orig = original_pts[:, 0] - expected_x_orig
+    
+    if side == 'left':
+        outliers = original_pts[dx_orig < -distance_threshold]
+    elif side == 'right':
+        outliers = original_pts[dx_orig > distance_threshold]
+    else:
+        outliers = original_pts[np.abs(dx_orig) > distance_threshold]
+    
+    return final_line, pts, outliers
+
+
 
 def process_contours(image, contours, resolution_x, resolution_y):
     # Create a copy to draw the fitted lines on (Green for width, Red for height)
@@ -103,12 +169,16 @@ def process_contours(image, contours, resolution_x, resolution_y):
         right_points = np.array(right_points, dtype=np.int32)
     
         # --- FIT WIDTH (Vertical Edges) ---
-#        line_left = cv2.fitLine(left_points, cv2.DIST_L2, 0, 0.001, 0.001)
-#        line_right = cv2.fitLine(right_points, cv2.DIST_L2, 0, 0.001, 0.001)
+        #line_left = cv2.fitLine(left_points, cv2.DIST_L2, 0, 0.001, 0.001)
+        #line_right = cv2.fitLine(right_points, cv2.DIST_L2, 0, 0.001, 0.001)
         
         # cv2.DIST_HUBER ignores points that deviate too far from the consensus
-        line_left = cv2.fitLine(left_points, cv2.DIST_HUBER, 0, 0.001, 0.001)
-        line_right = cv2.fitLine(right_points, cv2.DIST_HUBER, 0, 0.001, 0.001)
+        #line_left = cv2.fitLine(left_points, cv2.DIST_HUBER, 0, 0.001, 0.001)
+        #line_right = cv2.fitLine(right_points, cv2.DIST_HUBER, 0, 0.001, 0.001)
+
+        # Iteratively fit and discard outlier points (asymmetrically targeting stains)
+        line_left, clean_left, outliers_left = robust_fit_line(left_points, side='left', distance_threshold=3.0)
+        line_right, clean_right, outliers_right = robust_fit_line(right_points, side='right', distance_threshold=3.0)
     
         vx1, vy1, x1, y1 = line_left[0][0], line_left[1][0], line_left[2][0], line_left[3][0]
         vx2, vy2, x2, y2 = line_right[0][0], line_right[1][0], line_right[2][0], line_right[3][0]
@@ -196,6 +266,12 @@ def process_contours(image, contours, resolution_x, resolution_y):
         cv2.line(output_image, (int(x2 - mult * avg_vx_w), int(y2 - mult * avg_vy_w)), 
                  (int(x2 + mult * avg_vx_w), int(y2 + mult * avg_vy_w)), (0, 255, 0), 1)
 
+        # Draw rejected "stain" points in bright yellow (BGR: 0, 255, 255)
+        for pt in outliers_left:
+            cv2.circle(output_image, (int(pt[0]), int(pt[1])), 1, (0, 255, 255), -1)
+        for pt in outliers_right:
+            cv2.circle(output_image, (int(pt[0]), int(pt[1])), 1, (0, 255, 255), -1)       
+
         # --- DRAW TIGHT HEIGHT LINES (Red) ---
         # We use half of the actual pixel width we calculated to extend the line
         # left and right from the center anchor point.
@@ -220,11 +296,6 @@ def process_contours(image, contours, resolution_x, resolution_y):
         cv2.line(output_image, bot_start, bot_end, (0, 0, 255), 1)
 
     return output_image, measured_slits
-
-
-
-
-
 
 
 
