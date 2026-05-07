@@ -64,6 +64,10 @@ def create_clean_binary_mask(img_gray, morph=False, otsu_fac=2):
 '''
 CONTOUR ANALYSIS
 '''
+
+#############################################################################################################################
+# WIDTH
+#############################################################################################################################
 def robust_fit_line(contour_pts, side, distance_threshold=2.0, max_iters=10):
     """
     Iteratively fits a line using an asymmetric filter. 
@@ -130,6 +134,64 @@ def robust_fit_line(contour_pts, side, distance_threshold=2.0, max_iters=10):
     return final_line, pts, outliers
 
 
+#############################################################################################################################
+# HEIGHT
+#############################################################################################################################
+
+
+def robust_physical_inside_out(projections, side, expected_edge_len_px, distance_threshold=3.0, min_coverage=0.40):
+    """
+    Sweeps from the INSIDE out.
+    Stops at the first cluster that contains an absolute number of points based on 
+    the physical expected length of the edge. Completely ignores massive stain counts.
+    """
+    projs = np.array(projections, dtype=np.float32)
+    if len(projs) == 0:
+        return 0.0, []
+
+    # Calculate absolute number of pixels required to be considered a "true solid edge"
+    required_pts = max(5, int(expected_edge_len_px * min_coverage))
+
+    # Sort from INSIDE to OUTSIDE
+    if side == 'origin':
+        sorted_projs = np.sort(projs)[::-1] 
+    else:
+        sorted_projs = np.sort(projs)       
+
+    edge_val = None
+
+    for y in sorted_projs:
+        # Count absolute number of points within the threshold
+        inliers_mask = np.abs(projs - y) <= distance_threshold
+        if np.sum(inliers_mask) >= required_pts:
+            edge_val = np.mean(projs[inliers_mask])
+            break
+
+    if edge_val is None:
+        # Fallback to the densest peak if something goes horribly wrong
+        best_y = np.median(projs)
+        max_inliers = -1
+        for y in projs:
+            count = np.sum(np.abs(projs - y) <= distance_threshold)
+            if count > max_inliers:
+                max_inliers = count
+                best_y = y
+        edge_val = best_y
+
+    # Refine for sub-pixel accuracy
+    diffs = np.abs(projs - edge_val)
+    inliers = projs[diffs <= distance_threshold]
+    final_val = np.mean(inliers) if len(inliers) > 0 else edge_val
+
+    # Everything further outward is a stain
+    if side == 'origin':
+        outliers = projs < (final_val - distance_threshold)
+    else:
+        outliers = projs > (final_val + distance_threshold)
+
+    return final_val, outliers
+
+#############################################################################################################################
 
 def process_contours(image, contours, resolution_x, resolution_y):
     # Create a copy to draw the fitted lines on (Green for width, Red for height)
@@ -195,58 +257,64 @@ def process_contours(image, contours, resolution_x, resolution_y):
         ls_width_px = abs((x2 - x1) * (-avg_vy_w) + (y2 - y1) * avg_vx_w)
         ls_width = ls_width_px * resolution_x
 
-        # --- ROI BAND FILTERING HEIGHT FIT ---
+# --- ROI BAND FILTERING HEIGHT FIT ---
     
-        # 1. Get the bounding box to find the approximate top and bottom locations
-        rect = cv2.minAreaRect(cnt)
-        box = np.int32(cv2.boxPoints(rect))
-    
-        # 2. Identify the short sides (caps) vs long sides (walls)
-        dist_0_1 = math.hypot(box[0][0] - box[1][0], box[0][1] - box[1][1])
-        dist_1_2 = math.hypot(box[1][0] - box[2][0], box[1][1] - box[2][1])
-    
-        if dist_0_1 < dist_1_2:
-            cap_mid_1 = np.mean([box[0], box[1]], axis=0)
-            cap_mid_2 = np.mean([box[2], box[3]], axis=0)
-        else:
-            cap_mid_1 = np.mean([box[1], box[2]], axis=0)
-            cap_mid_2 = np.mean([box[3], box[0]], axis=0)
+        # 1. Use the raw contour directly (CHAIN_APPROX_NONE is naturally dense)
+        pts = cnt.reshape(-1, 2).astype(np.float32)
         
-        # 3. Use your highly accurate width vector as the projection axis
+        # 2. Setup projection axes relative to the center of the slit
         height_axis = np.array([avg_vx_w, avg_vy_w])
-        if np.dot(height_axis, cap_mid_2 - cap_mid_1) < 0:
-            height_axis = -height_axis # Ensure it points from cap 1 to cap 2
+        ortho_axis = np.array([-height_axis[1], height_axis[0]])
+        center_pt = np.array([cx, cy])
         
-        # 4. Filter contour points falling within a narrow band (+/- 15 pixels)
-        tolerance = 20 #15 
-        top_points_filtered, bot_points_filtered = [], []
-    
-        for pt in cnt:
-            p = pt[0]
-            # Check distance from cap 1
-            if abs(np.dot(p - cap_mid_1, height_axis)) <= tolerance:
-                top_points_filtered.append(p)
-            
-            # Check distance from cap 2
-            if abs(np.dot(p - cap_mid_2, height_axis)) <= tolerance:
-                bot_points_filtered.append(p)
-            
-        # 5. Fit (average) the filtered points
-        if len(top_points_filtered) > 0 and len(bot_points_filtered) > 0:
-            # Project all filtered points onto the shared axis to find their true distances
-            avg_proj_1 = np.mean([np.dot(p - cap_mid_1, height_axis) for p in top_points_filtered])
-            avg_proj_2 = np.mean([np.dot(p - cap_mid_1, height_axis) for p in bot_points_filtered])
+        # 3. Project all points onto the axes
+        vecs = pts - center_pt
+        h_projs = np.dot(vecs, height_axis)
+        w_projs = np.dot(vecs, ortho_axis)
         
+# 4. Use a narrow core mask (25% of half-width)
+        core_w_limit = (ls_width_px / 2.0) * 0.25
+        core_mask = np.abs(w_projs) <= core_w_limit
+        
+        # Calculate the absolute pixel width of this tunnel
+        tunnel_width_px = core_w_limit * 2.0
+        
+        core_pts = pts[core_mask]
+        core_h_projs = h_projs[core_mask]
+        
+        if len(core_h_projs) > 5:
+            # 5. Split into Top and Bottom
+            top_mask = core_h_projs < 0
+            bot_mask = core_h_projs > 0
+            
+            top_projs = core_h_projs[top_mask]
+            bot_projs = core_h_projs[bot_mask]
+            
+            top_pts_filtered = core_pts[top_mask]
+            bot_pts_filtered = core_pts[bot_mask]
+            
+            # 6. Apply the Physical Inside-Out Caliper
+            # Require the edge to physically span at least 40% of the tunnel's width
+            avg_proj_1, top_outliers_mask = robust_physical_inside_out(top_projs, side='origin', expected_edge_len_px=tunnel_width_px, distance_threshold=3.0, min_coverage=0.40)
+            avg_proj_2, bot_outliers_mask = robust_physical_inside_out(bot_projs, side='far_end', expected_edge_len_px=tunnel_width_px, distance_threshold=3.0, min_coverage=0.40)
+            
+            # 7. Final calculations
             ls_height_px = abs(avg_proj_2 - avg_proj_1)
             ls_height = ls_height_px * resolution_y
-        
-            final_top_center = cap_mid_1 + avg_proj_1 * height_axis
-            final_bot_center = cap_mid_1 + avg_proj_2 * height_axis
+            
+            final_top_center = center_pt + avg_proj_1 * height_axis
+            final_bot_center = center_pt + avg_proj_2 * height_axis
+            
+            # Extract outliers for drawing
+            outliers_top = [top_pts_filtered[k] for k, is_out in enumerate(top_outliers_mask) if is_out]
+            outliers_bot = [bot_pts_filtered[k] for k, is_out in enumerate(bot_outliers_mask) if is_out]
         else:
-            # Safety fallback if the slit ends were completely missing/outside tolerance
-            ls_height_px = max(dist_0_1, dist_1_2)
+            # Absolute fallback if shape is entirely destroyed
+            ls_height_px = h
             ls_height = ls_height_px * resolution_y
-            final_top_center, final_bot_center = cap_mid_1, cap_mid_2
+            final_top_center = center_pt - (h/2) * height_axis
+            final_bot_center = center_pt + (h/2) * height_axis
+            outliers_top, outliers_bot = [], []
 
 
         # --- STORE IN DICTIONARY ---
@@ -256,6 +324,9 @@ def process_contours(image, contours, resolution_x, resolution_y):
                 "width": ls_width,
                 "height": ls_height
             })
+        else:
+            # Print the rejected values so we know exactly why they were dropped
+            print(f"Dropped slit near pixel ({cx:.0f}, {cy:.0f}) | Width: {ls_width:.3f} mm | Height: {ls_height:.3f} mm")
 
         # --- VISUALIZATION ---
         mult = max(h, w) / 1.9
@@ -271,6 +342,12 @@ def process_contours(image, contours, resolution_x, resolution_y):
             cv2.circle(output_image, (int(pt[0]), int(pt[1])), 1, (0, 255, 255), -1)
         for pt in outliers_right:
             cv2.circle(output_image, (int(pt[0]), int(pt[1])), 1, (0, 255, 255), -1)       
+
+        # Draw rejected height "stain" points in orange (BGR: 0, 165, 255)
+        for pt in outliers_top:
+            cv2.circle(output_image, (int(pt[0]), int(pt[1])), 1, (0, 165, 255), -1)
+        for pt in outliers_bot:
+            cv2.circle(output_image, (int(pt[0]), int(pt[1])), 1, (0, 165, 255), -1)
 
         # --- DRAW TIGHT HEIGHT LINES (Red) ---
         # We use half of the actual pixel width we calculated to extend the line
@@ -453,9 +530,10 @@ def calibrate_resolutions(measured_slits, dxf_slits, current_res_x, current_res_
     
     return optimal_res_x, optimal_res_y
 
-def save_top_width_error_subimages(image, measured_slits, dxf_slits, res_x, res_y, output_folder, top_n=5, margin=50):
+
+def save_top_error_subimages(image, measured_slits, dxf_slits, res_x, res_y, output_folder, error_type='width', top_n=5, min_error_mm=0.010, margin=50):
     """
-    Identifies slits with the largest width error, crops them, overlays data, 
+    Identifies slits with the largest errors, crops them, overlays data, 
     and saves them side-by-side with a highlighted overview of the full image.
     
     Parameters:
@@ -464,12 +542,17 @@ def save_top_width_error_subimages(image, measured_slits, dxf_slits, res_x, res_
     - dxf_slits: List of nominal DXF slit dictionaries (sorted).
     - res_x, res_y: Resolution conversion factors (mm per pixel).
     - output_folder: Destination folder for the cropped images.
-    - top_n: Number of top error slits to process.
+    - error_type: 'width' or 'height' to define which measurement to evaluate.
+    - top_n: Maximum number of top error slits to process.
+    - min_error_mm: Only save subimages if the error is greater than or equal to this value (in mm).
     - margin: Pixel padding around the cropped slit.
     """
+    if error_type not in ['width', 'height']:
+        raise ValueError("error_type must be either 'width' or 'height'")
+        
     os.makedirs(output_folder, exist_ok=True)
     
-    # --- NEW: Prepare the overview image ---
+    # --- Prepare the overview image ---
     orig_h, orig_w = image.shape[:2]
     # Downscale the overview image to a manageable size (max 1000px dimension)
     scale_factor = 1000.0 / max(orig_h, orig_w)
@@ -492,20 +575,32 @@ def save_top_width_error_subimages(image, measured_slits, dxf_slits, res_x, res_
     
     error_data = []
     
-    # 1. Calculate width error for all pairs
+    # 1. Calculate error for all pairs based on the chosen switch
     for idx, (m_slit, d_slit) in enumerate(zip(measured_slits, dxf_slits)):
-        width_error = abs(m_slit["width"] - d_slit["width"])
-        error_data.append({
-            "index": idx,
-            "error": width_error,
-            "measured": m_slit
-        })
+        if error_type == 'width':
+            error_val = abs(m_slit["width"] - d_slit["width"])
+        else:
+            error_val = abs(m_slit["height"] - d_slit["height"])
+            
+        # Only keep the data if the error exceeds our minimum threshold
+        if error_val >= min_error_mm:
+            error_data.append({
+                "index": idx,
+                "error": error_val,
+                "measured": m_slit
+            })
         
-    # 2. Sort the slits by width error in descending order
+    # 2. Sort the valid slits by error in descending order
     error_data.sort(key=lambda x: x["error"], reverse=True)
     
+    actual_n = min(top_n, len(error_data))
+    
+    if actual_n == 0:
+        print(f"No {error_type} errors found >= {min_error_mm:.4f} mm. No images saved.")
+        return
+    
     # 3. Extract and save the top N subimages
-    for rank in range(min(top_n, len(error_data))):
+    for rank in range(actual_n):
         data = error_data[rank]
         m_slit = data["measured"]
         
@@ -530,9 +625,11 @@ def save_top_width_error_subimages(image, measured_slits, dxf_slits, res_x, res_
             sub_img_color = sub_img.copy()
             
         # 4. Superimpose the text on the cropped image
+        err_label = "Width Err" if error_type == 'width' else "Height Err"
+        
         text_lines = [
             f"Rank: {rank + 1} (Orig Idx: {data['index']})",
-            f"Width Err: {data['error']:.4f} mm",
+            f"{err_label}: {data['error']:.4f} mm",
             f"Fitted W: {m_slit['width']:.4f} mm",
             f"Fitted H: {m_slit['height']:.4f} mm"
         ]
@@ -542,7 +639,7 @@ def save_top_width_error_subimages(image, measured_slits, dxf_slits, res_x, res_
             cv2.putText(sub_img_color, text, (15, y_pos), 
                         cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0, 0, 255), 2)
             
-        # --- NEW: Create the highlighted overview ---
+        # --- Create the highlighted overview ---
         overview_img = base_overview_color.copy()
         
         # Calculate coordinates for the highlight marker on the scaled overview
@@ -555,7 +652,7 @@ def save_top_width_error_subimages(image, measured_slits, dxf_slits, res_x, res_
         cv2.drawMarker(overview_img, (cx_overview, cy_overview), color=(0, 0, 255), 
                        markerType=cv2.MARKER_CROSS, markerSize=marker_radius, thickness=2)
         
-        # --- NEW: Combine the Crop and Overview ---
+        # --- Combine the Crop and Overview ---
         h_sub, w_sub = sub_img_color.shape[:2]
         h_over, w_over = overview_img.shape[:2]
         
@@ -568,8 +665,8 @@ def save_top_width_error_subimages(image, measured_slits, dxf_slits, res_x, res_
         combined_img = np.hstack((padded_sub, padded_over))
         
         # 5. Save the combined layout
-        filename = f"error_rank_{rank + 1}_idx_{data['index']}.png"
+        filename = f"{error_type}_error_rank_{rank + 1}_idx_{data['index']}.png"
         save_path = os.path.join(output_folder, filename)
         cv2.imwrite(save_path, combined_img)
         
-    print(f"Successfully generated and saved top {top_n} combined error subimages to '{output_folder}'.")
+    print(f"Successfully generated and saved {actual_n} '{error_type}' error subimages (>= {min_error_mm:.4f} mm) to '{output_folder}'.")
