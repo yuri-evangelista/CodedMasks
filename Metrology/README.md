@@ -46,7 +46,7 @@ API Reference
 
         scale: Float multiplier to downscale/upscale the image for viewing.
 
-
+    <br>
 
     ```python 
     create_clean_binary_mask(img_gray, morph=False, otsu_fac=2)
