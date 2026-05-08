@@ -4,6 +4,9 @@ import ezdxf
 import cv2
 import math
 import os
+from skimage.transform import EuclideanTransform
+from skimage.measure import ransac
+
 
 def show_image(img, title, scale):
     
@@ -470,6 +473,131 @@ def sort_grid(slits, y_direction='down', row_tolerance=0.5):
         
     return sorted_grid
 
+
+###########################################################################################
+# TRANSFORMATIONS
+###########################################################################################
+
+def find_affine_transformation(physical, nominal):
+    # 1. Extract the (x, y) tuples into standard N x 2 numpy arrays
+    pts_phys = np.array([item["center"] for item in physical], dtype=np.float32)
+    pts_nom  = np.array([item["center"] for item in nominal], dtype=np.float32)
+
+    # 2. Find the optimal transformation matrix
+    # transform_matrix will map physical points -> nominal points
+    transform_matrix, inliers = cv2.estimateAffinePartial2D(pts_phys, pts_nom)
+
+    if transform_matrix is not None:
+        print("Transformation Matrix:\n", transform_matrix)
+    else:
+        print("Failed to find a valid transformation.")
+
+    # 2.Transform sorted_physical
+    # 1. Reshape your (N, 2) array to (N, 1, 2) for OpenCV
+    pts_phys_reshaped = pts_phys.reshape(-1, 1, 2)
+
+    # 2. Apply the 2x3 transformation matrix
+    aligned_pts_reshaped = cv2.transform(pts_phys_reshaped, transform_matrix)
+
+    # 3. Reshape back to a standard (N, 2) array
+    aligned_pts = aligned_pts_reshaped.reshape(-1, 2)
+
+
+    aligned_physical = []
+    residual_errors = []
+
+    for i in range(len(physical)):
+        # 1. Extract the new aligned coordinates and the nominal target
+        new_x, new_y = aligned_pts[i]
+        nom_x, nom_y = nominal[i]["center"]
+        
+        # 2. Calculate the exact difference (Error)
+        dx = new_x - nom_x
+        dy = new_y - nom_y
+        euclidean_dist = np.hypot(dx, dy)
+        
+        # 3. Store the new aligned data
+        aligned_physical.append({
+            "center": (new_x, new_y),
+            "width": physical[i]["width"],
+            "height": physical[i]["height"]
+        })
+        
+        # 4. Store the errors for statistical analysis later
+        residual_errors.append({
+            "x_error": dx,
+            "y_error": dy,
+            "total_offset": euclidean_dist
+        })
+
+    # Quick readout of the worst-case scenario
+    max_error = max(item["total_offset"] for item in residual_errors)
+    print(f"Maximum remaining positional error: {max_error:.4f} units")
+
+    return aligned_physical, residual_errors
+
+
+def find_rigid_transformation(physical, nominal):
+    #this is a rigid body fit (no scaling)
+
+    # 1. Format your points as standard (N, 2) numpy arrays
+    pts_phys = np.array([item["center"] for item in physical], dtype=np.float32)
+    pts_nom  = np.array([item["center"] for item in nominal], dtype=np.float32)
+
+    # 2. Estimate the pure Rigid Transform (Scale is strictly 1.0)
+    # residual_threshold is the max pixel/unit error to be considered a "good" match
+    model, inliers = ransac((pts_phys, pts_nom), EuclideanTransform, 
+                            min_samples=2, residual_threshold=2.0, max_trials=100)
+
+    if model is not None:
+        # This returns a 3x3 homogeneous transformation matrix
+        matrix_3x3 = model.params
+        
+        # You can easily extract the exact rotation angle and translation
+        rotation_rads = model.rotation
+        tx, ty = model.translation
+        
+        print(f"Rotation (degrees): {np.degrees(rotation_rads):.4f}")
+        print(f"Translation: X={tx:.4f}, Y={ty:.4f}")
+    else:
+        print("Failed to find a valid transformation.")
+
+    aligned_pts_rigid = model(pts_phys)
+
+    aligned_physical = []
+    residual_errors = []
+    for i in range(len(physical)):
+        # 1. Extract the new aligned coordinates and the nominal target
+        new_x, new_y = aligned_pts_rigid[i]
+        nom_x, nom_y = nominal[i]["center"]
+        
+        # 2. Calculate the exact difference (Error)
+        dx = new_x - nom_x
+        dy = new_y - nom_y
+        euclidean_dist = np.hypot(dx, dy)
+        
+        # 3. Store the new aligned data
+        aligned_physical.append({
+            "center": (new_x, new_y),
+            "width": physical[i]["width"],
+            "height": physical[i]["height"]
+        })
+        
+        # 4. Store the errors for statistical analysis later
+        residual_errors.append({
+            "x_error": dx,
+            "y_error": dy,
+            "total_offset": euclidean_dist
+        })
+
+    # Quick readout of the worst-case scenario
+    max_error = max(item["total_offset"] for item in residual_errors)
+    print(f"Maximum remaining positional error: {max_error:.4f} units")
+
+    return aligned_fisical, residual_errors
+
+
+
 def calibrate_resolutions(measured_slits, dxf_slits, current_res_x, current_res_y):
     """
     Calculates the optimal MM_PER_PIXEL calibration by fitting a linear 
@@ -530,6 +658,9 @@ def calibrate_resolutions(measured_slits, dxf_slits, current_res_x, current_res_
     
     return optimal_res_x, optimal_res_y
 
+###########################################################################################
+# SUBIMAGE SAVING
+###########################################################################################
 
 def save_top_error_subimages(image, measured_slits, dxf_slits, res_x, res_y, output_folder, error_type='width', top_n=5, min_error_mm=0.010, margin=50):
     """
