@@ -21,7 +21,7 @@ This library is particularly suited for dealing with noisy or imperfect physical
 
 Ensure the following Python packages are installed:
 
-```bash
+
 pip install numpy matplotlib ezdxf opencv-python scikit-image
 
 numpy: Matrix and mathematical operations.
