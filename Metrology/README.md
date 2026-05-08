@@ -46,7 +46,7 @@ API Reference
 
         scale: Float multiplier to downscale/upscale the image for viewing.
 
-    <br>
+    <br><br>
 
     ```python 
     create_clean_binary_mask(img_gray, morph=False, otsu_fac=2)
@@ -67,10 +67,15 @@ API Reference
 
         side: String ('left', 'right', or neutral). Specifies which direction to aggressively filter.
 
+    <br><br>
+
     ```python
     robust_physical_inside_out(projections, side, expected_edge_len_px, distance_threshold=3.0, min_coverage=0.40)
     ```
     Measures feature boundaries by sweeping from the "inside" out, requiring a cluster to match a physical minimum span to be considered a true edge.
+
+    <br><br>
+
     ```python
     process_contours(image, contours, resolution_x, resolution_y)
     ```
@@ -83,6 +88,9 @@ API Reference
     process_dxf(dxf_path)
     ```
     Scans the modelspace of a DXF file for LWPOLYLINE elements, extracting their bounding boxes to calculate nominal widths, heights, and centers.
+
+    <br><br>
+
     ```python
     sort_grid(slits, y_direction='down', row_tolerance=0.5)
     ```
@@ -95,10 +103,16 @@ API Reference
     Calculates a 2D partial affine transformation matrix (includes scaling, rotation, translation) to map physical point clouds onto nominal CAD coordinates.
 
         Returns: A re-aligned list of physical measurements and a list of residual positional errors.
+
+    <br><br>
+
     ```python
     find_rigid_transformation(physical, nominal)
     ```
     Calculates a strict rigid transformation (rotation and translation only, scale = 1.0) using RANSAC. Ideal when physical scale is known and strictly constrained.
+
+    <br><br>
+
     ```python
     calibrate_resolutions(measured_slits, dxf_slits, current_res_x, current_res_y)
     ```
