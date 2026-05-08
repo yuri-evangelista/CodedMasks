@@ -37,7 +37,9 @@ numpy: Matrix and mathematical operations.
 API Reference
 1. Image Processing & Visualization
 
-    ```bash show_image(img, title, scale)```
+    ```python 
+    show_image(img, title, scale)
+    ```
     Resizes and visualizes a grayscale image using Matplotlib.
 
         img: OpenCV image matrix.
