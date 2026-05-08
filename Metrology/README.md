@@ -46,7 +46,9 @@ API Reference
 
         scale: Float multiplier to downscale/upscale the image for viewing.
 
+    ```python 
     create_clean_binary_mask(img_gray, morph=False, otsu_fac=2)
+    ```
     Normalizes illumination (CLAHE), applies median blur, and calculates an inverse binary mask.
 
         img_gray: Input grayscale image.
@@ -56,44 +58,54 @@ API Reference
         otsu_fac: Modifier for the Otsu threshold weight.
 
 2. Contour Analysis & Measurement
-
+	```python 
     robust_fit_line(contour_pts, side, distance_threshold=2.0, max_iters=10)
+    ```
     Iteratively fits a line to edge points while aggressively filtering out outliers (stains) bulging into a specific side.
 
         side: String ('left', 'right', or neutral). Specifies which direction to aggressively filter.
 
+    ```python
     robust_physical_inside_out(projections, side, expected_edge_len_px, distance_threshold=3.0, min_coverage=0.40)
+    ```
     Measures feature boundaries by sweeping from the "inside" out, requiring a cluster to match a physical minimum span to be considered a true edge.
-
+    ```python
     process_contours(image, contours, resolution_x, resolution_y)
+    ```
     [Core Routine] Wraps the robust fitting logic to calculate the exact center, width, and height of every detected contour.
 
         Returns: An annotated visualization image and a list of dictionary objects: [{"center": (x,y), "width": w, "height": h}, ...].
 
 3. CAD / DXF Integration
-
+	```python
     process_dxf(dxf_path)
+    ```
     Scans the modelspace of a DXF file for LWPOLYLINE elements, extracting their bounding boxes to calculate nominal widths, heights, and centers.
-
+    ```python
     sort_grid(slits, y_direction='down', row_tolerance=0.5)
+    ```
     Sorts a list of detected or nominal slits topologically (Top-to-Bottom, Left-to-Right). Essential for pairing physical features with nominal models.
 
 4. Transformation & Alignment
-
+	```python
     find_affine_transformation(physical, nominal)
+    ```
     Calculates a 2D partial affine transformation matrix (includes scaling, rotation, translation) to map physical point clouds onto nominal CAD coordinates.
 
         Returns: A re-aligned list of physical measurements and a list of residual positional errors.
-
+    ```python
     find_rigid_transformation(physical, nominal)
+    ```
     Calculates a strict rigid transformation (rotation and translation only, scale = 1.0) using RANSAC. Ideal when physical scale is known and strictly constrained.
-
+    ```python
     calibrate_resolutions(measured_slits, dxf_slits, current_res_x, current_res_y)
+    ```
     Calculates the optimal sensor resolutions (mm/pixel) by performing linear regression between raw pixel coordinates and nominal DXF targets.
 
 5. Reporting
-
+	```python
     save_top_error_subimages(image, measured_slits, dxf_slits, res_x, res_y, output_folder, error_type='width', top_n=5, min_error_mm=0.010, margin=50)
+    ```
     Isolates and exports the highest-error features.
 
         Generates an image consisting of two panels: a zoomed-in, heavily annotated crop of the physical feature, and a macro-view of the total wafer/image with a red targeting reticle showing the defect's location.
