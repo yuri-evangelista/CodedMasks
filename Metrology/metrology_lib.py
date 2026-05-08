@@ -594,7 +594,7 @@ def find_rigid_transformation(physical, nominal):
     max_error = max(item["total_offset"] for item in residual_errors)
     print(f"Maximum remaining positional error: {max_error:.4f} units")
 
-    return aligned_fisical, residual_errors
+    return aligned_physical, residual_errors
 
 
 
