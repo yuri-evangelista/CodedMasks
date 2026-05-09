@@ -197,185 +197,151 @@ def robust_physical_inside_out(projections, side, expected_edge_len_px, distance
 #############################################################################################################################
 
 def process_contours(image, contours, resolution_x, resolution_y):
-    # Create a copy to draw the fitted lines on (Green for width, Red for height)
     output_image = cv2.cvtColor(image, cv2.COLOR_GRAY2BGR)
-
-    print("Image dims", output_image.shape )
-    print("Contours dim", len(contours))
-
-    # This will store our final dictionaries
+    print('Image dims', output_image.shape)
+    print('Contours dim', len(contours))
     measured_slits = []
-
-    for i, cnt in enumerate(contours):
-        # 1. Get bounding box to find the center and define the 5%/95% trim zones
-        x, y, w, h = cv2.boundingRect(cnt)
+    
+    for (i, cnt) in enumerate(contours):
+        # Initial guess using Bounding Box
+        (x, y, w, h) = cv2.boundingRect(cnt)
         cx = x + w / 2.0
         cy = y + h / 2.0
-    
-        # Trim zones for Vertical Lines (Width)
-        y_min = y + (0.05 * h)
-        y_max = y + (0.95 * h)
-    
-        left_points, right_points = [], []
-    
-        # 2. Sort points into left/right edges (We no longer need to sort top/bottom here)
-        for pt in cnt:
-            px, py = pt[0]
+        y_min = y + 0.05 * h
+        y_max = y + 0.95 * h
         
-            # Sort for Width (Left vs Right)
-            if y_min < py < y_max: 
+        (left_points, right_points) = ([], [])
+        for pt in cnt:
+            (px, py) = pt[0]
+            if y_min < py < y_max:
                 if px < cx:
                     left_points.append([px, py])
                 else:
                     right_points.append([px, py])
-                
-        # Convert to numpy arrays for OpenCV
+                    
         left_points = np.array(left_points, dtype=np.int32)
         right_points = np.array(right_points, dtype=np.int32)
-    
-        # --- FIT WIDTH (Vertical Edges) ---
-        #line_left = cv2.fitLine(left_points, cv2.DIST_L2, 0, 0.001, 0.001)
-        #line_right = cv2.fitLine(right_points, cv2.DIST_L2, 0, 0.001, 0.001)
         
-        # cv2.DIST_HUBER ignores points that deviate too far from the consensus
-        #line_left = cv2.fitLine(left_points, cv2.DIST_HUBER, 0, 0.001, 0.001)
-        #line_right = cv2.fitLine(right_points, cv2.DIST_HUBER, 0, 0.001, 0.001)
-
-        # Iteratively fit and discard outlier points (asymmetrically targeting stains)
-        line_left, clean_left, outliers_left = robust_fit_line(left_points, side='left', distance_threshold=3.0)
-        line_right, clean_right, outliers_right = robust_fit_line(right_points, side='right', distance_threshold=3.0)
-    
-        vx1, vy1, x1, y1 = line_left[0][0], line_left[1][0], line_left[2][0], line_left[3][0]
-        vx2, vy2, x2, y2 = line_right[0][0], line_right[1][0], line_right[2][0], line_right[3][0]
-
-        # Force them to be perfectly parallel
-        if (vx1 * vx2 + vy1 * vy2) < 0: 
-            vx2, vy2 = -vx2, -vy2 # Align vectors
+        # Robust Line Fitting for Left and Right edges
+        (line_left, clean_left, outliers_left) = robust_fit_line(left_points, side='left', distance_threshold=3.0)
+        (line_right, clean_right, outliers_right) = robust_fit_line(right_points, side='right', distance_threshold=3.0)
         
+        (vx1, vy1, x1, y1) = (line_left[0][0], line_left[1][0], line_left[2][0], line_left[3][0])
+        (vx2, vy2, x2, y2) = (line_right[0][0], line_right[1][0], line_right[2][0], line_right[3][0])
+        
+        if vx1 * vx2 + vy1 * vy2 < 0:
+            (vx2, vy2) = (-vx2, -vy2)
+            
         avg_vx_w = (vx1 + vx2) / 2.0
         avg_vy_w = (vy1 + vy2) / 2.0
-        norm_w = math.sqrt(avg_vx_w**2 + avg_vy_w**2)
-        avg_vx_w, avg_vy_w = avg_vx_w / norm_w, avg_vy_w / norm_w
-    
-        ls_width_px = abs((x2 - x1) * (-avg_vy_w) + (y2 - y1) * avg_vx_w)
-        ls_width = ls_width_px * resolution_x
-
-# --- ROI BAND FILTERING HEIGHT FIT ---
-    
-        # 1. Use the raw contour directly (CHAIN_APPROX_NONE is naturally dense)
-        pts = cnt.reshape(-1, 2).astype(np.float32)
+        norm_w = math.sqrt(avg_vx_w ** 2 + avg_vy_w ** 2)
+        (avg_vx_w, avg_vy_w) = (avg_vx_w / norm_w, avg_vy_w / norm_w)
         
-        # 2. Setup projection axes relative to the center of the slit
+        ls_width_px = abs((x2 - x1) * -avg_vy_w + (y2 - y1) * avg_vx_w)
+        ls_width = ls_width_px * resolution_x
+        
+        pts = cnt.reshape(-1, 2).astype(np.float32)
         height_axis = np.array([avg_vx_w, avg_vy_w])
         ortho_axis = np.array([-height_axis[1], height_axis[0]])
         center_pt = np.array([cx, cy])
-        
-        # 3. Project all points onto the axes
         vecs = pts - center_pt
+        
         h_projs = np.dot(vecs, height_axis)
         w_projs = np.dot(vecs, ortho_axis)
         
-# 4. Use a narrow core mask (25% of half-width)
-        core_w_limit = (ls_width_px / 2.0) * 0.25
+        core_w_limit = ls_width_px / 2.0 * 0.25
         core_mask = np.abs(w_projs) <= core_w_limit
-        
-        # Calculate the absolute pixel width of this tunnel
         tunnel_width_px = core_w_limit * 2.0
-        
         core_pts = pts[core_mask]
         core_h_projs = h_projs[core_mask]
+
+        # -------------------------------------------------------------------
+        # --- NEW ---: Compute Width Shift from RANSAC lines
+        # -------------------------------------------------------------------
+        proj_L = np.dot(np.array([x1, y1]), ortho_axis)
+        proj_R = np.dot(np.array([x2, y2]), ortho_axis)
+        center_proj_w = np.dot(center_pt, ortho_axis)
+        shift_w = (proj_L + proj_R) / 2.0 - center_proj_w
         
         if len(core_h_projs) > 5:
-            # 5. Split into Top and Bottom
             top_mask = core_h_projs < 0
             bot_mask = core_h_projs > 0
-            
             top_projs = core_h_projs[top_mask]
             bot_projs = core_h_projs[bot_mask]
-            
             top_pts_filtered = core_pts[top_mask]
             bot_pts_filtered = core_pts[bot_mask]
             
-            # 6. Apply the Physical Inside-Out Caliper
-            # Require the edge to physically span at least 40% of the tunnel's width
-            avg_proj_1, top_outliers_mask = robust_physical_inside_out(top_projs, side='origin', expected_edge_len_px=tunnel_width_px, distance_threshold=3.0, min_coverage=0.40)
-            avg_proj_2, bot_outliers_mask = robust_physical_inside_out(bot_projs, side='far_end', expected_edge_len_px=tunnel_width_px, distance_threshold=3.0, min_coverage=0.40)
+            # Robust Line Fitting for Top and Bottom edges
+            (avg_proj_1, top_outliers_mask) = robust_physical_inside_out(top_projs, side='origin', expected_edge_len_px=tunnel_width_px, distance_threshold=3.0, min_coverage=0.4)
+            (avg_proj_2, bot_outliers_mask) = robust_physical_inside_out(bot_projs, side='far_end', expected_edge_len_px=tunnel_width_px, distance_threshold=3.0, min_coverage=0.4)
             
-            # 7. Final calculations
             ls_height_px = abs(avg_proj_2 - avg_proj_1)
             ls_height = ls_height_px * resolution_y
             
             final_top_center = center_pt + avg_proj_1 * height_axis
             final_bot_center = center_pt + avg_proj_2 * height_axis
             
-            # Extract outliers for drawing
-            outliers_top = [top_pts_filtered[k] for k, is_out in enumerate(top_outliers_mask) if is_out]
-            outliers_bot = [bot_pts_filtered[k] for k, is_out in enumerate(bot_outliers_mask) if is_out]
+            outliers_top = [top_pts_filtered[k] for (k, is_out) in enumerate(top_outliers_mask) if is_out]
+            outliers_bot = [bot_pts_filtered[k] for (k, is_out) in enumerate(bot_outliers_mask) if is_out]
+
+            # -------------------------------------------------------------------
+            # --- NEW ---: Compute Height Shift from RANSAC edges
+            # -------------------------------------------------------------------
+            shift_h = (avg_proj_1 + avg_proj_2) / 2.0
+            
         else:
-            # Absolute fallback if shape is entirely destroyed
             ls_height_px = h
             ls_height = ls_height_px * resolution_y
-            final_top_center = center_pt - (h/2) * height_axis
-            final_bot_center = center_pt + (h/2) * height_axis
-            outliers_top, outliers_bot = [], []
+            final_top_center = center_pt - h / 2 * height_axis
+            final_bot_center = center_pt + h / 2 * height_axis
+            (outliers_top, outliers_bot) = ([], [])
+            
+            # Fallback if top/bottom fit fails
+            shift_h = 0.0
 
+        # -------------------------------------------------------------------
+        # --- NEW ---: Apply shifts to get final robust center
+        # -------------------------------------------------------------------
+        robust_cx = center_pt[0] + shift_w * ortho_axis[0] + shift_h * height_axis[0]
+        robust_cy = center_pt[1] + shift_w * ortho_axis[1] + shift_h * height_axis[1]
 
-        # --- STORE IN DICTIONARY ---
-        if 0.200 < ls_width < 4.0 and 11.0 < ls_height < 15:
+        # Use the NEW robust center coordinates instead of the old bounding box ones
+        if 0.2 < ls_width < 4.0 and 11.0 < ls_height < 15:
             measured_slits.append({
-                "center": (cx * resolution_x, cy * resolution_y),
-                "width": ls_width,
-                "height": ls_height
+                'center': (robust_cx * resolution_x, robust_cy * resolution_y), 
+                'width': ls_width, 
+                'height': ls_height
             })
         else:
-            # Print the rejected values so we know exactly why they were dropped
-            print(f"Dropped slit near pixel ({cx:.0f}, {cy:.0f}) | Width: {ls_width:.3f} mm | Height: {ls_height:.3f} mm")
-
-        # --- VISUALIZATION ---
+            print(f'Dropped slit near pixel ({robust_cx:.0f}, {robust_cy:.0f}) | Width: {ls_width:.3f} mm | Height: {ls_height:.3f} mm')
+            
+        # -------------------------------------------------------------------
+        # Drawing operations for output_image (Left unchanged)
+        # -------------------------------------------------------------------
         mult = max(h, w) / 1.9
-    
-        # Draw Width lines (Green: 0, 255, 0)
-        cv2.line(output_image, (int(x1 - mult * avg_vx_w), int(y1 - mult * avg_vy_w)), 
-                 (int(x1 + mult * avg_vx_w), int(y1 + mult * avg_vy_w)), (0, 255, 0), 1)
-        cv2.line(output_image, (int(x2 - mult * avg_vx_w), int(y2 - mult * avg_vy_w)), 
-                 (int(x2 + mult * avg_vx_w), int(y2 + mult * avg_vy_w)), (0, 255, 0), 1)
-
-        # Draw rejected "stain" points in bright yellow (BGR: 0, 255, 255)
+        cv2.line(output_image, (int(x1 - mult * avg_vx_w), int(y1 - mult * avg_vy_w)), (int(x1 + mult * avg_vx_w), int(y1 + mult * avg_vy_w)), (0, 255, 0), 1)
+        cv2.line(output_image, (int(x2 - mult * avg_vx_w), int(y2 - mult * avg_vy_w)), (int(x2 + mult * avg_vx_w), int(y2 + mult * avg_vy_w)), (0, 255, 0), 1)
+        
         for pt in outliers_left:
             cv2.circle(output_image, (int(pt[0]), int(pt[1])), 1, (0, 255, 255), -1)
         for pt in outliers_right:
-            cv2.circle(output_image, (int(pt[0]), int(pt[1])), 1, (0, 255, 255), -1)       
-
-        # Draw rejected height "stain" points in orange (BGR: 0, 165, 255)
+            cv2.circle(output_image, (int(pt[0]), int(pt[1])), 1, (0, 255, 255), -1)
         for pt in outliers_top:
             cv2.circle(output_image, (int(pt[0]), int(pt[1])), 1, (0, 165, 255), -1)
         for pt in outliers_bot:
             cv2.circle(output_image, (int(pt[0]), int(pt[1])), 1, (0, 165, 255), -1)
-
-        # --- DRAW TIGHT HEIGHT LINES (Red) ---
-        # We use half of the actual pixel width we calculated to extend the line
-        # left and right from the center anchor point.
-        half_w = ls_width_px / 2.0 
-    
-        ortho_vx, ortho_vy = -avg_vy_w, avg_vx_w
-    
-        # Calculate the exact start and end points for the TOP cap
-        top_start = (int(final_top_center[0] - half_w * ortho_vx), 
-                     int(final_top_center[1] - half_w * ortho_vy))
-        top_end   = (int(final_top_center[0] + half_w * ortho_vx), 
-                     int(final_top_center[1] + half_w * ortho_vy))
-                 
-        # Calculate the exact start and end points for the BOTTOM cap
-        bot_start = (int(final_bot_center[0] - half_w * ortho_vx), 
-                     int(final_bot_center[1] - half_w * ortho_vy))
-        bot_end   = (int(final_bot_center[0] + half_w * ortho_vx), 
-                     int(final_bot_center[1] + half_w * ortho_vy))
-    
-        # Draw them
+            
+        half_w = ls_width_px / 2.0
+        (ortho_vx, ortho_vy) = (-avg_vy_w, avg_vx_w)
+        top_start = (int(final_top_center[0] - half_w * ortho_vx), int(final_top_center[1] - half_w * ortho_vy))
+        top_end = (int(final_top_center[0] + half_w * ortho_vx), int(final_top_center[1] + half_w * ortho_vy))
+        bot_start = (int(final_bot_center[0] - half_w * ortho_vx), int(final_bot_center[1] - half_w * ortho_vy))
+        bot_end = (int(final_bot_center[0] + half_w * ortho_vx), int(final_bot_center[1] + half_w * ortho_vy))
+        
         cv2.line(output_image, top_start, top_end, (0, 0, 255), 1)
         cv2.line(output_image, bot_start, bot_end, (0, 0, 255), 1)
-
-    return output_image, measured_slits
+        
+    return (output_image, measured_slits)
 
 
 
